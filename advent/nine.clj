@@ -15,7 +15,7 @@
 ;;
 (defn first-parse [in]
   (reduce
-    (fn [{:keys [mode current bracket-contents take-outs index] :as acc} ele]
+    (fn [{:keys [mode current bracket-contents take-outs index normals] :as acc} ele]
       (cond
         (and (not= \) ele) (= :mode/within-brackets mode))
         (let []
@@ -28,7 +28,10 @@
 
         (and (= \( ele) (= :mode/normal mode))
         (let []
-          (assoc acc :mode :mode/within-brackets :current "("))
+          (assoc acc :mode :mode/within-brackets
+                     :index (inc index)
+                     :normals (conj normals {:index index :normal current})
+                     :current "("))
 
         (and (= \) ele) (= :mode/within-brackets mode))
         (let []
@@ -59,8 +62,8 @@
         ))
     {:index 0
      :mode :mode/normal
-     :take-outs {}
-     :normals {}
+     :take-outs []
+     :normals []
      :current nil}
     in))
 
@@ -68,5 +71,7 @@
   (let [input (slurp "./advent/nine.txt")
         raw-series (first (line-seq (BufferedReader. (StringReader. input))))
         _ (println raw-series)
-        res (first-parse raw-series)]
-    (dissoc res :take-outs)))
+        res (map (fn [take-out]
+                   (let [{:keys [counting-out repeat-times]} (:bracket-contents take-out)]
+                     (* counting-out repeat-times))) (:take-outs (first-parse raw-series)))]
+    (apply + res)))
