@@ -1,8 +1,9 @@
 (ns advent.nine
-  (:require [utils :as u])
+  (:require [utils :as u]
+            [clojure.string :as str])
   (:import (java.io StringReader BufferedReader)))
 
-(defn make-repeating [brackets-spec]
+(defn make-repeating-1 [brackets-spec]
   (let [counting-out (u/string->int (u/between "(" "x" brackets-spec))
         repeat-times (u/string->int (u/between "x" ")" brackets-spec))]
     {:counting-out counting-out :repeat-times repeat-times}))
@@ -23,7 +24,7 @@
 
         (and (= \) ele) (= :mode/within-brackets mode))
         (let [brackets-spec (str current ele)
-              repeating-spec (make-repeating brackets-spec)]
+              repeating-spec (make-repeating-1 brackets-spec)]
           (assoc acc :mode :mode/takeout :bracket-contents repeating-spec :current nil))
 
         (and (= \( ele) (= :mode/normal mode))
@@ -53,9 +54,12 @@
         (= \) ele)
         (assert false (str "Not expected closing bracket"))
 
+        ;; Was okay to crash here to get past part one
         (= :mode/normal mode)
         (let []
-          (assert false (str "Unknown ele: " ele ", mode: " mode)))
+          ;(assert false (str "Unknown ele: " ele ", mode: " mode ", acc:\n" (:take-outs acc)))
+          (assoc acc :current (str current ele))
+          )
 
         :default
         (assert false (str "Unknown ele: " ele ", mode: " mode))
@@ -67,7 +71,7 @@
      :current nil}
     in))
 
-(defn x []
+(defn first-part-correct []
   (let [input (slurp "./advent/nine.txt")
         raw-series (first (line-seq (BufferedReader. (StringReader. input))))
         _ (println raw-series)
@@ -75,3 +79,62 @@
                    (let [{:keys [counting-out repeat-times]} (:bracket-contents take-out)]
                      (* counting-out repeat-times))) (:take-outs (first-parse raw-series)))]
     (apply + res)))
+
+(defn second-part []
+  (let [input (slurp "./advent/nine.txt")
+        raw-series (first (line-seq (BufferedReader. (StringReader. input))))
+        ;_ (println raw-series)
+        res (:take-outs (first-parse raw-series))]
+    (println (nth res 1))))
+
+;;
+;; At highest level of recursion there are 2, a parent and a leaf
+;;
+(def test-input-1 "(25x11)(1x1)J(12x14)CNZKOSNAJVYL(16x3)QADCLDFUVLLZZYKX")
+(def test-input-2 "(16x3)QADCLDFUVLLZZYKX")
+(def test-input-3 "(3x3)XYZ")
+(def test-input-4 "X(8x2)(3x3)ABCY")
+(def test-input-5 "(27x12)(20x12)(13x14)(7x10)(1x12)A")
+
+;; S/be only 445 long
+(def test-input-6 "(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN")
+;; (3x3)ABC(2x3)XY(5x2)PQRST
+
+(defn make-repeating-2 [brackets-spec]
+  (let [counting-out (u/string->int (u/between "(" "x" brackets-spec))
+        repeat-times (u/string->int (u/between "x" ")" brackets-spec))
+        close-br (inc (str/index-of brackets-spec ")"))]
+    {:counting-out counting-out :repeat-times repeat-times :left-over (apply str (drop close-br brackets-spec))}))
+
+;;
+;; Want to return vector of string, where each starts with a '(' or character. Only do all at this level.
+;;
+(defn divide-by-afters [in]
+  (let [_ (println in)
+        res (first-parse in)]
+    res))
+
+(defn decompressed-length [in]
+  (if (str/index-of in "(")
+    (let [{:keys [counting-out repeat-times left-over]} (make-repeating-2 in)
+          left-br-indexes (u/indexes-of left-over "(")
+          further-brackets-count (count left-br-indexes)
+          ]
+      (case further-brackets-count
+        0 (let [res (* counting-out repeat-times)
+                _ (assert (= counting-out (count left-over)) (str "counting-out: " counting-out ", left-over: " left-over))]
+            res)
+        1 (let [close-br (inc (str/index-of left-over ")"))
+                after-close (apply str (drop close-br left-over))]
+            (* repeat-times (decompressed-length after-close)))
+        (let [classified (divide-by-afters left-over)
+              normal-lengths (mapcat decompressed-length (map :normal (:normals classified)))
+              takeout-lengths (mapcat decompressed-length (map :takeout (:take-outs classified)))]
+          (assert false (str "Done mapcat recursion: " normal-lengths ", " takeout-lengths))
+          )
+        )
+      )
+    (count in)))
+
+(defn x []
+  (decompressed-length test-input-6))
