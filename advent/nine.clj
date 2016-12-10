@@ -129,16 +129,20 @@
               ]
           (case further-brackets-count
             0 (let [res (* counting-out repeat-times)
-                    ;_ (assert (= counting-out (count left-over)) (str "counting-out: " counting-out ", left-over: " left-over))
+                    _ (assert (= counting-out (count left-over)) (str "counting-out: " counting-out ", left-over: " left-over))
                     unaccounted-for (apply str (drop counting-out left-over))
                     _ (println (str "Not Accounting for " unaccounted-for ", " (count unaccounted-for)))
                     ]
                 (+ res #_(decompressed-length unaccounted-for)))
             1 (let [close-br (inc (str/index-of in ")"))
                     after-close (apply str (drop close-br in))
+                    shorter (apply str (take counting-out after-close))
+                    left-over (apply str (drop counting-out after-close))
                     _ (println "after-close:" after-close)
+                    _ (println "shorter:" shorter)
+                    _ (println "left-over:" left-over)
                     ]
-                (* repeat-times (decompressed-length after-close)))
+                (+ (* repeat-times (decompressed-length shorter)) (count left-over)))
             (let [classified (divide-by-afters in)
                   _ (println "classified:" classified)
                   normal-lengths (map decompressed-length (filter identity (map :normal (:normals classified))))
