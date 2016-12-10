@@ -96,9 +96,16 @@
 (def test-input-4 "X(8x2)(3x3)ABCY")
 (def test-input-5 "(27x12)(20x12)(13x14)(7x10)(1x12)A")
 
-;; S/be only 445 long
+;; S/be only 445 long, getting 139, now getting 238
 (def test-input-6 "(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN")
-;; (3x3)ABC(2x3)XY(5x2)PQRST
+
+;; S/be 25, and that's what get
+(def test-input-7 "(3x3)ABC(2x3)XY(5x2)PQRST")
+
+;; Getting 162.
+;; Is 9 by (3x2)TWO(5x7)SEVEN
+;; So 9 x 35 = 315
+(def test-input-8 "(18x9)(3x2)TWO(5x7)SEVEN")
 
 (defn make-repeating-2 [brackets-spec]
   (if (= 0 (str/index-of brackets-spec "("))
@@ -116,6 +123,10 @@
         res (first-parse in)]
     res))
 
+;; rubbish var names, fix...
+(defn decompress [factor decompressed-length]
+  (* (count factor) decompressed-length))
+
 (defn decompressed-length [in]
   (let [open-bracket-at (str/index-of in "(")
         _ (println "IN:" in)
@@ -130,23 +141,28 @@
           (case further-brackets-count
             0 (let [res (* counting-out repeat-times)
                     _ (assert (= counting-out (count left-over)) (str "counting-out: " counting-out ", left-over: " left-over))
-                    unaccounted-for (apply str (drop counting-out left-over))
-                    _ (println (str "Not Accounting for " unaccounted-for ", " (count unaccounted-for)))
+                    ;unaccounted-for (apply str (drop counting-out left-over))
+                    ;_ (println (str "Not Accounting for " unaccounted-for ", " (count unaccounted-for)))
                     ]
                 (+ res #_(decompressed-length unaccounted-for)))
             1 (let [close-br (inc (str/index-of in ")"))
                     after-close (apply str (drop close-br in))
                     shorter (apply str (take counting-out after-close))
                     left-over (apply str (drop counting-out after-close))
-                    _ (println "after-close:" after-close)
-                    _ (println "shorter:" shorter)
-                    _ (println "left-over:" left-over)
+                    ;_ (println "after-close:" after-close)
+                    ;_ (println "shorter:" shorter)
+                    ;_ (println "left-over:" left-over)
                     ]
                 (+ (* repeat-times (decompressed-length shorter)) (count left-over)))
             (let [classified (divide-by-afters in)
                   _ (println "classified:" classified)
                   normal-lengths (map decompressed-length (filter identity (map :normal (:normals classified))))
-                  takeout-lengths (map decompressed-length (map :takeout (:take-outs classified)))
+                  ;f-1 #(* % repeat-times)
+                  ;f-2 identity
+                  ;f-3 #(decompressed-length %1)
+                  ;f-4 #(* %1 %2)
+                  take-outs (:take-outs classified)
+                  takeout-lengths (map (fn [s n] (decompress s n)) (map :takeout take-outs) (map #(-> % :bracket-contents :repeat-times) take-outs))
                   ;_ (println "normal lengths: <" normal-lengths ">")
                   ;_ (println "takeout lengths: <" takeout-lengths ">")
                   ]
@@ -159,4 +175,4 @@
       )))
 
 (defn x []
-  (decompressed-length test-input-4))
+  (decompressed-length test-input-8))
