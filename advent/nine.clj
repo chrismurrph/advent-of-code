@@ -94,17 +94,18 @@
 (def test-input-2 "(16x3)QADCLDFUVLLZZYKX")
 (def test-input-3 "(3x3)XYZ")
 (def test-input-4 "X(8x2)(3x3)ABCY")
+
+;; 241920, and that's what get
 (def test-input-5 "(27x12)(20x12)(13x14)(7x10)(1x12)A")
 
-;; S/be only 445 long, getting 139, now getting 238
+;; S/be only 445, and that's what get
 (def test-input-6 "(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN")
 
 ;; S/be 25, and that's what get
 (def test-input-7 "(3x3)ABC(2x3)XY(5x2)PQRST")
 
-;; Getting 162.
 ;; Is 9 by (3x2)TWO(5x7)SEVEN
-;; So 9 x 35 = 315
+;; So 9 x (35 + 6) = 369 is correct
 (def test-input-8 "(18x9)(3x2)TWO(5x7)SEVEN")
 
 (defn make-repeating-2 [brackets-spec]
@@ -118,14 +119,16 @@
 ;;
 ;; Want to return vector of string, where each starts with a '(' or character. Only do all at this level.
 ;;
-(defn divide-by-afters [in]
+(defn partition-into-ast [in]
   (let [_ (println in)
         res (first-parse in)]
     res))
 
-;; rubbish var names, fix...
-(defn decompress [factor decompressed-length]
-  (* (count factor) decompressed-length))
+(declare decompressed-length)
+
+(defn decompress [factor further-command]
+  ;(println "decompress:" factor further-command)
+  (* factor (decompressed-length further-command)))
 
 (defn decompressed-length [in]
   (let [open-bracket-at (str/index-of in "(")
@@ -152,17 +155,14 @@
                     ;_ (println "after-close:" after-close)
                     ;_ (println "shorter:" shorter)
                     ;_ (println "left-over:" left-over)
+                    ;_ (println "repeat-times:" repeat-times)
                     ]
-                (+ (* repeat-times (decompressed-length shorter)) (count left-over)))
-            (let [classified (divide-by-afters in)
-                  _ (println "classified:" classified)
+                (+ (* repeat-times (decompressed-length shorter)) (decompressed-length left-over)))
+            (let [classified (partition-into-ast in)
+                  ;_ (println "\nclassified:" (u/pp-str classified 200))
                   normal-lengths (map decompressed-length (filter identity (map :normal (:normals classified))))
-                  ;f-1 #(* % repeat-times)
-                  ;f-2 identity
-                  ;f-3 #(decompressed-length %1)
-                  ;f-4 #(* %1 %2)
                   take-outs (:take-outs classified)
-                  takeout-lengths (map (fn [s n] (decompress s n)) (map :takeout take-outs) (map #(-> % :bracket-contents :repeat-times) take-outs))
+                  takeout-lengths (map (fn [n s] (decompress n s)) (map #(-> % :bracket-contents :repeat-times) take-outs) (map :takeout take-outs))
                   ;_ (println "normal lengths: <" normal-lengths ">")
                   ;_ (println "takeout lengths: <" takeout-lengths ">")
                   ]
@@ -175,4 +175,4 @@
       )))
 
 (defn x []
-  (decompressed-length test-input-8))
+  (decompressed-length test-input-4))
