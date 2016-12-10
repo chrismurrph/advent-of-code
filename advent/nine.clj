@@ -101,10 +101,12 @@
 ;; (3x3)ABC(2x3)XY(5x2)PQRST
 
 (defn make-repeating-2 [brackets-spec]
-  (let [counting-out (u/string->int (u/between "(" "x" brackets-spec))
-        repeat-times (u/string->int (u/between "x" ")" brackets-spec))
-        close-br (inc (str/index-of brackets-spec ")"))]
-    {:counting-out counting-out :repeat-times repeat-times :left-over (apply str (drop close-br brackets-spec))}))
+  (if (= 0 (str/index-of brackets-spec "("))
+    (let [counting-out (u/string->int (u/between "(" "x" brackets-spec))
+          repeat-times (u/string->int (u/between "x" ")" brackets-spec))
+          close-br (inc (str/index-of brackets-spec ")"))]
+      {:counting-out counting-out :repeat-times repeat-times :left-over (apply str (drop close-br brackets-spec))})
+    (assert false "Don't call unless starts with a bracket")))
 
 ;;
 ;; Want to return vector of string, where each starts with a '(' or character. Only do all at this level.
@@ -115,26 +117,42 @@
     res))
 
 (defn decompressed-length [in]
-  (if (str/index-of in "(")
-    (let [{:keys [counting-out repeat-times left-over]} (make-repeating-2 in)
-          left-br-indexes (u/indexes-of left-over "(")
-          further-brackets-count (count left-br-indexes)
-          ]
-      (case further-brackets-count
-        0 (let [res (* counting-out repeat-times)
-                _ (assert (= counting-out (count left-over)) (str "counting-out: " counting-out ", left-over: " left-over))]
-            res)
-        1 (let [close-br (inc (str/index-of left-over ")"))
-                after-close (apply str (drop close-br left-over))]
-            (* repeat-times (decompressed-length after-close)))
-        (let [classified (divide-by-afters left-over)
-              normal-lengths (mapcat decompressed-length (map :normal (:normals classified)))
-              takeout-lengths (mapcat decompressed-length (map :takeout (:take-outs classified)))]
-          (assert false (str "Done mapcat recursion: " normal-lengths ", " takeout-lengths))
+  (let [open-bracket-at (str/index-of in "(")
+        _ (println "IN:" in)
+        ]
+    (condp = open-bracket-at
+      nil (count in)
+      0 (let [{:keys [counting-out repeat-times left-over]} (make-repeating-2 in)
+              left-br-indexes (u/indexes-of left-over "(")
+              further-brackets-count (count left-br-indexes)
+              _ (println "further-brackets-count: " further-brackets-count)
+              ]
+          (case further-brackets-count
+            0 (let [res (* counting-out repeat-times)
+                    ;_ (assert (= counting-out (count left-over)) (str "counting-out: " counting-out ", left-over: " left-over))
+                    unaccounted-for (apply str (drop counting-out left-over))
+                    _ (println (str "Not Accounting for " unaccounted-for ", " (count unaccounted-for)))
+                    ]
+                (+ res #_(decompressed-length unaccounted-for)))
+            1 (let [close-br (inc (str/index-of in ")"))
+                    after-close (apply str (drop close-br in))
+                    _ (println "after-close:" after-close)
+                    ]
+                (* repeat-times (decompressed-length after-close)))
+            (let [classified (divide-by-afters in)
+                  _ (println "classified:" classified)
+                  normal-lengths (map decompressed-length (filter identity (map :normal (:normals classified))))
+                  takeout-lengths (map decompressed-length (map :takeout (:take-outs classified)))
+                  ;_ (println "normal lengths: <" normal-lengths ">")
+                  ;_ (println "takeout lengths: <" takeout-lengths ">")
+                  ]
+              (+ (apply + normal-lengths) (apply + takeout-lengths))
+              )
+            )
           )
-        )
-      )
-    (count in)))
+      (let [before-bracket (take open-bracket-at in)]
+        (+ (count before-bracket) (decompressed-length (apply str (drop open-bracket-at in)))))
+      )))
 
 (defn x []
-  (decompressed-length test-input-6))
+  (decompressed-length test-input-4))
