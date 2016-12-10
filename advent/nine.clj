@@ -80,13 +80,6 @@
                      (* counting-out repeat-times))) (:take-outs (first-parse raw-series)))]
     (apply + res)))
 
-(defn second-part []
-  (let [input (slurp "./advent/nine.txt")
-        raw-series (first (line-seq (BufferedReader. (StringReader. input))))
-        ;_ (println raw-series)
-        res (:take-outs (first-parse raw-series))]
-    (println (nth res 1))))
-
 ;;
 ;; At highest level of recursion there are 2, a parent and a leaf
 ;;
@@ -116,30 +109,31 @@
       {:counting-out counting-out :repeat-times repeat-times :left-over (apply str (drop close-br brackets-spec))})
     (assert false "Don't call unless starts with a bracket")))
 
+(declare decompressed-length)
+
 ;;
 ;; Want to return vector of string, where each starts with a '(' or character. Only do all at this level.
 ;;
 (defn partition-into-ast [in]
-  (let [_ (println in)
-        res (first-parse in)]
-    res))
-
-(declare decompressed-length)
-
-(defn decompress [factor further-command]
-  ;(println "decompress:" factor further-command)
-  (* factor (decompressed-length further-command)))
+  (let [
+        ;_ (println in)
+        classified (first-parse in)
+        ;_ (println "\nclassified:" (u/pp-str classified 200))
+        normal-lengths (map decompressed-length (filter identity (map :normal (:normals classified))))
+        take-outs (:take-outs classified)
+        ]
+    [normal-lengths take-outs]))
 
 (defn decompressed-length [in]
   (let [open-bracket-at (str/index-of in "(")
-        _ (println "IN:" in)
+        ;_ (println "IN:" in)
         ]
     (condp = open-bracket-at
       nil (count in)
       0 (let [{:keys [counting-out repeat-times left-over]} (make-repeating-2 in)
               left-br-indexes (u/indexes-of left-over "(")
               further-brackets-count (count left-br-indexes)
-              _ (println "further-brackets-count: " further-brackets-count)
+              ;_ (println "further-brackets-count: " further-brackets-count)
               ]
           (case further-brackets-count
             0 (let [res (* counting-out repeat-times)
@@ -158,11 +152,8 @@
                     ;_ (println "repeat-times:" repeat-times)
                     ]
                 (+ (* repeat-times (decompressed-length shorter)) (decompressed-length left-over)))
-            (let [classified (partition-into-ast in)
-                  ;_ (println "\nclassified:" (u/pp-str classified 200))
-                  normal-lengths (map decompressed-length (filter identity (map :normal (:normals classified))))
-                  take-outs (:take-outs classified)
-                  takeout-lengths (map (fn [n s] (decompress n s)) (map #(-> % :bracket-contents :repeat-times) take-outs) (map :takeout take-outs))
+            (let [[normal-lengths take-outs] (partition-into-ast in)
+                  takeout-lengths (map (fn [n s] (* n (decompressed-length s))) (map #(-> % :bracket-contents :repeat-times) take-outs) (map :takeout take-outs))
                   ;_ (println "normal lengths: <" normal-lengths ">")
                   ;_ (println "takeout lengths: <" takeout-lengths ">")
                   ]
@@ -174,5 +165,21 @@
         (+ (count before-bracket) (decompressed-length (apply str (drop open-bracket-at in)))))
       )))
 
+(defn second-part-correct []
+  (let [raw-input (slurp "./advent/nine.txt")
+        in (first (line-seq (BufferedReader. (StringReader. raw-input))))
+        _ (println in)
+        res (time (decompressed-length in))]
+    res))
+
 (defn x []
   (decompressed-length test-input-4))
+
+(defn test-various []
+  (assert (= 369 (decompressed-length test-input-8)))
+  (assert (= 25 (decompressed-length test-input-7)))
+  (assert (= 445 (decompressed-length test-input-6)))
+  (assert (= 241920 (decompressed-length test-input-5)))
+  (assert (= 20 (decompressed-length test-input-4)))
+  (assert (= 9 (decompressed-length test-input-3)))
+  )
