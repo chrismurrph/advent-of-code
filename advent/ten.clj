@@ -1,6 +1,7 @@
 (ns advent.ten
   (:require [instaparse.core :as insta]
-            [utils :as u]))
+            [utils :as u])
+  (:import (java.io StringReader BufferedReader)))
 
 (def test-input-line "bot 75 gives low to bot 145 and high to bot 95")
 (def test-lines ["value 5 goes to bot 2"
@@ -49,6 +50,9 @@
     {}
     hiccup))
 
+(def watch-compare #{61 17} #_#{5 2})
+(def do-part-one false)
+
 ;;
 ;; Returns a bots state after an instruction.
 ;;
@@ -58,13 +62,13 @@
     (let [{:keys [type entity-num]} entity]
       (if (= type :bot)
         (let [bot entity-num
-              _ (println (str "getting " instruction ", so will look up: " bot " in " (u/pp-str bots 60)))
+              ;_ (println (str "getting " instruction ", so will look up: " bot))
               retrieved-bot (bots bot)
               new-bot (update retrieved-bot :values conj value)
               removed-state (if from-bot
                   (do
                     (assert (number? from-bot) (str "Not number: " (type from-bot)))
-                    (println (str "to rem: " value " from " from-bot))
+                    ;(println (str "to rem: " value " from " from-bot))
                     ;(println (str "from bot values before: " (:values (get bots from-bot))))
                     (-> bots
                         (update-in [from-bot :values] (fn [old-values]
@@ -85,10 +89,12 @@
                   lower (apply min bot-values)
                   higher (apply max bot-values)
                   _ (assert (not= lower higher))
+                  together #{lower higher}
+                  _ (when do-part-one (assert (not= together watch-compare) (str "bot " bot " is responsible for " watch-compare)))
                   low-receiver (:low retrieved-bot)
-                  _ (println (str "low " lower " goes to " low-receiver))
+                  ;_ (println (str "low " lower " goes to " low-receiver))
                   high-receiver (:high retrieved-bot)
-                  _ (println (str "high " higher " goes to " high-receiver))
+                  ;_ (println (str "high " higher " goes to " high-receiver))
                   changed-state-1 ((give-one new-state) {:from-bot bot :entity low-receiver :value lower})
                   changed-state-2 ((give-one changed-state-1) {:from-bot bot :entity high-receiver :value higher})
                   ]
@@ -100,7 +106,9 @@
           )))))
 
 (defn x []
-  (let [hiccup (map to-hiccup test-lines)
+  (let [raw-input (slurp "./advent/ten.txt")
+        in (line-seq (BufferedReader. (StringReader. raw-input)))
+        hiccup (map to-hiccup in)
         instructions (produce-instructions hiccup)
         bots (produce-bots-hash hiccup)
         new-bots (reduce
