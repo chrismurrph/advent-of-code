@@ -60,8 +60,8 @@
    (println x)
    x)
   ([x msg]
-    (println msg x)
-    x))
+   (println msg x)
+   x))
 
 (defn probe-stack
   ([x]
@@ -134,8 +134,8 @@
         _ (assert value)
         _ (assert s (str "Can't look for <" value "> in nil"))
         _ (assert from-index)
-        res (str/index-of s value from-index)
-        ]
+        res (str/index-of s value from-index)]
+
     (if (nil? res)
       nil
       (let [just-before (first (take 1 (drop (dec res) s)))
@@ -143,8 +143,8 @@
             end-res (+ res (count value))
             just-after (first (take 1 (drop end-res s)))
             whitespace-after? (whitespace? just-after)
-            whole-word? (and whitespace-before? whitespace-after?)
-            ]
+            whole-word? (and whitespace-before? whitespace-after?)]
+
         (if whole-word?
           (if after? (+ res (count value)) res)
           (whole-word-index-of s value end-res after?))))))
@@ -202,9 +202,9 @@
     (/ (Math/round (* d factor)) factor)))
 
 (defn divide [num div]
-  (let [res (/ num div)
+  (let [res (/ num div)]
         ;_ (assert (= res (int res)) (str "Got back fraction: " res))
-        ]
+
     (round 0 res)))
 
 (defn factorial [n]
@@ -232,13 +232,13 @@
 
 (defn lcm [& numbers]
   (let [gcd-fn (fn [a b] (if (zero? b)
-                        a
-                        (recur b (mod a b))))
+                          a
+                          (recur b (mod a b))))
         lcm-inner (fn [num1 num2]
-                (let [multiplied (* num1 num2)
-                      gcd (gcd-fn num1 num2)
-                      res (/ multiplied gcd)]
-                  res))
+                   (let [multiplied (* num1 num2)
+                         gcd (gcd-fn num1 num2)
+                         res (/ multiplied gcd)]
+                     res))
         [head & tail] numbers]
     (if (nil? tail)
       head
@@ -259,9 +259,9 @@
         to-diff (- max-to min-to)
         from-proportion (/ (- from-val min-from) from-diff)
         res (* to-diff from-proportion)
-        rounded-res (int (Math/ceil res))
+        rounded-res (int (Math/ceil res))]
         ;_ (println "FROM VAL:" from-val " | RES:" rounded-res " | " res " | F:" from-world " | T:" to-world)
-        ]
+
     rounded-res))
 
 (defn distance [precision [x1 y1] [x2 y2]]
@@ -330,9 +330,9 @@
 ;;
 (defn left-pad [xs pad-ele max-sz]
   (let [
-        diff-count (- max-sz (count xs))
+        diff-count (- max-sz (count xs))]
         ;_ (assert (or (zero? diff-count) (pos? diff-count)) (str "Max size is " max-sz ", yet already have " (count xs)))
-        ]
+
     (if (> (count xs) max-sz)
       xs
       (concat (take diff-count (repeat pad-ele)) xs))))
@@ -342,8 +342,8 @@
         as-str (str int)
         diff-count (- max-sz (count as-str))
         _ (assert (or (zero? diff-count) (pos? diff-count)) (str "Max size is " max-sz ", yet already have " (count as-str)))
-        padded (apply str (concat (repeat diff-count pad-ele) as-str))
-        ]
+        padded (apply str (concat (repeat diff-count pad-ele) as-str))]
+
     padded))
 
 (defn sleep [n]
@@ -411,11 +411,11 @@
       '(())
 
       :default
-      (let [
+      (let []
             ;rest-of-combinations (combinations (rest population) (dec sz))
             ;now-multiplied-with-first (mapv #(conj % (first population)) (combinations (rest population) (dec sz)))
             ;really-rest (combinations (rest population) sz)
-            ]
+
         (concat (map #(cons (first population) %) (combinations (rest population) (dec sz)))
                 (combinations (rest population) sz))))))
 
@@ -465,7 +465,3 @@
          (map set)
          (apply clojure.set/intersection)
          (apply max))))
-
-
-
-

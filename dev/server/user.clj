@@ -6,8 +6,8 @@
 ;;
 (defn reset []
   ;(use 'clojure.stacktrace)
-  (refresh)
-  )
+  (refresh))
+
 
 ;;
 ;;

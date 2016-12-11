@@ -1,0 +1,32 @@
+
+
+((x3)
+ (3x3)ABC
+ (2x3)XY
+ (5x2)PQRST)
+X
+((x9)
+ (3x2)TWO
+ (5x7)SEVEN)
+
+445
+
+AssertionError Assert failed: 
+
+{:index 8, :mode :mode/normal, :take-outs 
+
+[
+{:index 1, :takeout "ABC", :bracket-contents {:counting-out 3, :repeat-times 3}} 
+{:index 3, :takeout "XY", :bracket-contents {:counting-out 2, :repeat-times 3}} 
+{:index 5, :takeout "PQRST", :bracket-contents {:counting-out 5, :repeat-times 2}} 
+{:index 7, :takeout "(3x2)TWO(5x7)SEVEN", :bracket-contents {:counting-out 18, :repeat-times 9}}], 
+
+:normals [
+{:index 0, :normal nil} 
+{:index 2, :normal nil} 
+{:index 4, :normal nil} 
+{:index 6, :normal "X"}], 
+
+:current nil, :bracket-contents nil}
+
+

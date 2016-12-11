@@ -25,8 +25,8 @@
 (defn to-hiccup [s]
   (->> (first (grammar-1 s))
        (insta/transform
-         {:int clojure.edn/read-string}))
-  )
+         {:int clojure.edn/read-string})))
+
 
 (defn produce-instructions [hiccup]
   (reduce
@@ -66,23 +66,23 @@
               retrieved-bot (bots bot)
               new-bot (update retrieved-bot :values conj value)
               removed-state (if from-bot
-                  (do
-                    (assert (number? from-bot) (str "Not number: " (type from-bot)))
+                             (do
+                               (assert (number? from-bot) (str "Not number: " (type from-bot)))
                     ;(println (str "to rem: " value " from " from-bot))
                     ;(println (str "from bot values before: " (:values (get bots from-bot))))
-                    (-> bots
-                        (update-in [from-bot :values] (fn [old-values]
+                               (-> bots
+                                   (update-in [from-bot :values] (fn [old-values]
                                                         ;(println "b4:" old-values)
-                                                        (let [res (vec (remove #{value} old-values))
+                                                                   (let [res (vec (remove #{value} old-values))]
                                                               ;_ (println "after:" res)
-                                                              ]
-                                                          res))))
-                    )
-                  bots)
+
+                                                                     res)))))
+
+                             bots)
               new-state (-> removed-state
-                            (assoc bot new-bot))
+                            (assoc bot new-bot))]
               ;_ (when from-bot (println "from bot values after: " (:values (get new-state from-bot))))
-              ]
+
           (if (> (-> new-bot :values count) 1)
             (let [bot-values (:values new-bot)
                   _ (assert (= 2 (count bot-values)) (str "More than 2: " new-bot))
@@ -96,14 +96,14 @@
                   high-receiver (:high retrieved-bot)
                   ;_ (println (str "high " higher " goes to " high-receiver))
                   changed-state-1 ((give-one new-state) {:from-bot bot :entity low-receiver :value lower})
-                  changed-state-2 ((give-one changed-state-1) {:from-bot bot :entity high-receiver :value higher})
-                  ]
+                  changed-state-2 ((give-one changed-state-1) {:from-bot bot :entity high-receiver :value higher})]
+
               changed-state-2)
             new-state))
         (do
           (println (str "To output " value " to " entity))
-          bots
-          )))))
+          bots)))))
+
 
 (defn x []
   (let [raw-input (slurp "./advent/ten.txt")
@@ -115,8 +115,8 @@
                    (fn [bots instruction]
                      ((give-one bots) instruction))
                    bots
-                   instructions)
-        ]
+                   instructions)]
+
     new-bots))
 
 (defn x-1 []
