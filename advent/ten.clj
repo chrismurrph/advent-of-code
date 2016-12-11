@@ -32,7 +32,7 @@
     (fn [acc [cmd & tail]]
       (case cmd
         :value-goes (let [[value bot-num] tail]
-                      (conj acc {:bot bot-num :value value}))
+                      (conj acc {:entity {:type :bot :entity-num bot-num} :value value}))
         :bot-gives acc))
     []
     hiccup))
@@ -54,41 +54,50 @@
 ;;
 (defn give-one [bots]
   ;(println bots)
-  (fn [{:keys [from-bot bot value] :as instruction}]
-    (let [_ (println "getting " instruction)
-          retrieved-bot (bots bot)
-          new-bot (update retrieved-bot :values conj value)
-          _ (when from-bot
-              (assert (number? from-bot) (str "Not number: " (type from-bot)))
-              (println (str "to rem: " value " from " from-bot))
-              ;(println (str "from bot values before: " (:values (get bots from-bot))))
-              )
-          new-state (-> bots
-                        (assoc bot new-bot)
+  (fn [{:keys [from-bot entity value] :as instruction}]
+    (let [{:keys [type entity-num]} entity]
+      (if (= type :bot)
+        (let [bot entity-num
+              _ (println (str "getting " instruction ", so will look up: " bot " in " (u/pp-str bots 60)))
+              retrieved-bot (bots bot)
+              new-bot (update retrieved-bot :values conj value)
+              removed-state (if from-bot
+                  (do
+                    (assert (number? from-bot) (str "Not number: " (type from-bot)))
+                    (println (str "to rem: " value " from " from-bot))
+                    ;(println (str "from bot values before: " (:values (get bots from-bot))))
+                    (-> bots
                         (update-in [from-bot :values] (fn [old-values]
                                                         ;(println "b4:" old-values)
                                                         (let [res (vec (remove #{value} old-values))
                                                               ;_ (println "after:" res)
                                                               ]
                                                           res))))
-          ;_ (when from-bot (println "from bot values after: " (:values (get new-state from-bot))))
-          ]
-      (if (> (-> new-bot :values count) 1)
-        (let [bot-values (:values new-bot)
-              _ (assert (= 2 (count bot-values)) (str "More than 2: " new-bot))
-              lower (apply min bot-values)
-              higher (apply max bot-values)
-              _ (assert (not= lower higher))
-              low-receiver (:low retrieved-bot)
-              _ (println (str "low " lower " goes to" low-receiver))
-              high-receiver (:high retrieved-bot)
-              _ (println (str "high " higher " goes to" high-receiver))
-              changed-state-1 ((give-one new-state) {:from-bot bot :bot (:entity-num low-receiver) :value lower})
-              changed-state-2 ((give-one changed-state-1) {:from-bot bot :bot (:entity-num high-receiver) :value higher})
+                    )
+                  bots)
+              new-state (-> removed-state
+                            (assoc bot new-bot))
+              ;_ (when from-bot (println "from bot values after: " (:values (get new-state from-bot))))
               ]
-          changed-state-2)
-        (let []
-          new-state)))))
+          (if (> (-> new-bot :values count) 1)
+            (let [bot-values (:values new-bot)
+                  _ (assert (= 2 (count bot-values)) (str "More than 2: " new-bot))
+                  lower (apply min bot-values)
+                  higher (apply max bot-values)
+                  _ (assert (not= lower higher))
+                  low-receiver (:low retrieved-bot)
+                  _ (println (str "low " lower " goes to " low-receiver))
+                  high-receiver (:high retrieved-bot)
+                  _ (println (str "high " higher " goes to " high-receiver))
+                  changed-state-1 ((give-one new-state) {:from-bot bot :entity low-receiver :value lower})
+                  changed-state-2 ((give-one changed-state-1) {:from-bot bot :entity high-receiver :value higher})
+                  ]
+              changed-state-2)
+            new-state))
+        (do
+          (println (str "To output " value " to " entity))
+          bots
+          )))))
 
 (defn x []
   (let [hiccup (map to-hiccup test-lines)
