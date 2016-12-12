@@ -19,9 +19,9 @@ The fourth floor contains nothing relevant.
      ordinal = 'first' | 'second' | 'third' | 'fourth'
      nothing = <'nothing relevant'>
      word = #'[a-zA-Z_-]+'
-     microchip = word '-compatible microchip'
-     generator = word ' generator'
-     item = ' a ' (generator | microchip)
+     microchip = ' ' word '-compatible microchip'
+     generator = ' ' word ' generator'
+     item = generator | microchip
      items = (' a ' word ' ' word ',') + ' and a ' word ' ' word
      contents = (items | ' nothing relevant') '.'
      sentence = <'The '> ordinal <' floor contains'> contents"))
