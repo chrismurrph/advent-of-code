@@ -117,7 +117,7 @@
                    bots
                    instructions)]
 
-    new-bots))
+    nil))
 
 (defn x-1 []
   (to-hiccup (second test-lines)))
