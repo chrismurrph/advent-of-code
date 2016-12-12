@@ -10,8 +10,8 @@ The fourth floor contains nothing relevant.
 
 (def input ["The first floor contains a thulium generator, a thulium-compatible microchip, a plutonium generator, and a strontium generator."
 "The second floor contains a plutonium-compatible microchip and a strontium-compatible microchip."
-#_"The third floor contains a promethium generator, a promethium-compatible microchip, a ruthenium generator, and a ruthenium-compatible microchip."
-"The third floor contains a promethium generator,a promethiumcompatible microchip,"
+"The third floor contains a promethium generator, a promethium-compatible microchip, a ruthenium generator, and a some."
+#_"The third floor contains a promethium generator, a promethium-compatible microchip, a ruthenium generator,."
 "The fourth floor contains nothing relevant."])
 
 (def grammar-1
@@ -19,13 +19,13 @@ The fourth floor contains nothing relevant.
     "<S> = sentence
      ordinal = 'first' | 'second' | 'third' | 'fourth'
      nothing = <'nothing relevant'>
-     word = 'promethium' | 'generator' | 'promethiumcompatible' | 'microchip'
+     word = #'[a-zA-Z_-]+'
      microchip = word '-compatible microchip'
      generator = word ' generator'
      item = ' a ' (generator | microchip)
-     items = ('a ' word ' ' word ',') +
-     contents = 'a promethium generator, a promethium-compatible microchip,'
-     sentence = <'The '> ordinal <' floor contains '> items"))
+     items = (' a ' word ' ' word ',') + ' and a ' word
+     contents = (items | ' nothing relevant') '.'
+     sentence = <'The '> ordinal <' floor contains'> contents"))
 
 (defn to-hiccup [s]
   (->> (first (grammar-1 s))
