@@ -18,17 +18,17 @@ The fourth floor contains nothing relevant.
     "<S> = sentence
      ordinal = 'first' | 'second' | 'third' | 'fourth'
      nothing = <'nothing relevant'>
-     word = #'[a-zA-Z_-]+'
-     microchip = ' ' word '-compatible microchip'
-     generator = ' ' word ' generator'
+     word = #'[a-zA-Z]+'
+     generator = word ' generator'
+     microchip = word '-compatible microchip'
      item = generator | microchip
-     items = (' a ' word ' ' word ',') + ' and a ' word ' ' word
+     items = (' a ' item ',') + ' and a ' item
      contents = (items | ' nothing relevant') '.'
      sentence = <'The '> ordinal <' floor contains'> contents"))
 
 (defn to-hiccup [s]
   (->> (first (grammar-1 s))
-       #_(insta/transform
+       (insta/transform
          {:ordinal (fn [x]
                      (case x
                        "first" 1
