@@ -105,10 +105,10 @@
   (let [res (move-one starting-lab :F4 #{[:generator "ruthenium"] [:microchip "ruthenium"]})]
     (println "F4" (:F4 res) "F3" (:F3 res) "elevator:" (:elevator res))))
 
-(def next-floors {:F4 '(:F3)
-                  :F3 '(:F4 :F2)
-                  :F2 '(:F1 :F3)
-                  :F1 '(:F2)})
+(def next-floors {:F4 [:F3]
+                  :F3 [:F4 :F2]
+                  :F2 [:F1 :F3]
+                  :F1 [:F2]})
 
 ;;
 ;; Start off with one lab and produce tonnes.
