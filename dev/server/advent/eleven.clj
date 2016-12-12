@@ -10,8 +10,7 @@ The fourth floor contains nothing relevant.
 
 (def input ["The first floor contains a thulium generator, a thulium-compatible microchip, a plutonium generator, and a strontium generator."
 "The second floor contains a plutonium-compatible microchip and a strontium-compatible microchip."
-"The third floor contains a promethium generator, a promethium-compatible microchip, a ruthenium generator, and a some."
-#_"The third floor contains a promethium generator, a promethium-compatible microchip, a ruthenium generator,."
+"The third floor contains a promethium generator, a promethium-compatible microchip, a ruthenium generator, and a ruthenium-compatible microchip."
 "The fourth floor contains nothing relevant."])
 
 (def grammar-1
@@ -23,7 +22,7 @@ The fourth floor contains nothing relevant.
      microchip = word '-compatible microchip'
      generator = word ' generator'
      item = ' a ' (generator | microchip)
-     items = (' a ' word ' ' word ',') + ' and a ' word
+     items = (' a ' word ' ' word ',') + ' and a ' word ' ' word
      contents = (items | ' nothing relevant') '.'
      sentence = <'The '> ordinal <' floor contains'> contents"))
 
