@@ -37,7 +37,7 @@
   (let [instructions (map to-hiccup steps)]
     (mapv (comp vec next) instructions)))
 
-(def tags {"a" 0 "b" 0 "c" 0 "d" 0})
+(def tags {"a" 0 "b" 0 "c" 1 "d" 0})
 
 (defn inc-i [[tag] tags]
   ;(println (str "inc of " tag))
