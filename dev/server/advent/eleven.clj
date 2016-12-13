@@ -1,6 +1,7 @@
 (ns advent.eleven
   (:require [instaparse.core :as insta]
-            [clojure.pprint :as pp]))
+            [clojure.pprint :as pp]
+            [utils :as u]))
 
 (def example-in ["The first floor contains a hydrogen-compatible microchip and a lithium-compatible microchip."
                  "The second floor contains a hydrogen generator."
@@ -75,7 +76,7 @@
 ;;
 ;; State does not need to include any contents of elevator, because they are the transitions
 ;;
-(def starting-lab {:elevator :F3
+(def starting-lab {:elevator :F1
                    :F1 [[:generator "thulium"] [:microchip "thulium"] [:generator "plutonium"] [:generator "strontium"]],
                    :F2 [[:microchip "plutonium"] [:microchip "strontium"]],
                    :F3 [[:generator "promethium"] [:microchip "promethium"] [:generator "ruthenium"] [:microchip "ruthenium"]],
@@ -131,3 +132,71 @@
   (let [res (generate-possible-moves starting-lab)]
     (pp/pprint res)
     (println (count res))))
+
+(defn destination-state? [lab-in]
+  ;(println "cfing" lab-in)
+  (= lab-in {:elevator :F4
+             :F1 []
+             :F2 []
+             :F3 []
+             :F4 []}))
+
+(def stop-at 15)
+(def heavy? false)
+(defn my-pr-str [labs]
+  (if heavy?
+    (u/pp-str labs 100)
+    (str (count labs))))
+
+(defn breath-first-search [starting-lab]
+  (loop [already-tested #{starting-lab}
+         last-round #{starting-lab}
+         times 1]
+    (let [
+          ;where-at (remove already-tested last-round)
+          newly-generated (mapcat generate-possible-moves last-round)
+          _ (println (str "Generated " (my-pr-str newly-generated) " from " (my-pr-str last-round) " at " times))
+          got-there? (first (filter destination-state? newly-generated))]
+      ;(println (str "Newly generated: " (count newly-generated)))
+      (if (or got-there? (= times stop-at))
+        (let []
+          (println (str "Got there with: <" got-there? ">"))
+          times)
+        (let [now-tested (into already-tested newly-generated)]
+          (recur now-tested (into #{} (remove already-tested newly-generated)) (inc times)))))))
+
+(defn x-6 []
+  (breath-first-search starting-lab))
+
+(defn bfs [start succ stop]
+  (if (stop start)
+    [0 start]
+    (loop [doing #{start}
+           visited #{start}
+           steps 1]
+      (println "steps" steps " visited " (count visited) " doing " (count doing))
+      #_(println "visited" visited)
+      (let [next (transduce
+                   (comp
+                     (mapcat succ)
+                     (keep (fn [state]
+                             (cond
+                               (stop state)
+                               {:done state}
+                               (contains? visited state)
+                               nil
+                               :else state)))
+                     (halt-when :done))
+                   conj
+                   #{}
+                   doing)]
+        (if-let [match (:done next)]
+          [steps match]
+          (if (= steps stop-at)
+            [steps nil]
+            (recur next
+                   (into visited next)
+                   (inc steps))))))))
+
+(defn x-7 []
+  (bfs starting-lab generate-possible-moves destination-state?))
