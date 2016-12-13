@@ -68,19 +68,21 @@
                  (into visited next)
                  (inc steps)))))))
 
+;;
+;; This one can't yet ansewr the second part, but the one above can (visited at step 51).
+;; So perhaps we really do need a transducer - work out later when finish 11.
+;;
 (defn breath-first-search [starting-lab generate-possible-moves destination-state?]
   (loop [already-tested #{starting-lab}
          last-round #{starting-lab}
          times 1]
     (let [
-          ;where-at (remove already-tested last-round)
           newly-generated (mapcat generate-possible-moves last-round)
           got-there? (first (filter destination-state? newly-generated))]
-      ;(println (str "Newly generated: " (count newly-generated)))
       (if got-there?
-        (let []
+        (do
           (println (str "Got there with: <" got-there? ">"))
-          times)
+          {:steps times})
         (let [now-tested (into already-tested newly-generated)]
           (recur now-tested (into #{} (remove already-tested newly-generated)) (inc times)))))))
 
