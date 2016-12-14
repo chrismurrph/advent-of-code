@@ -1,7 +1,10 @@
 (ns advent.eleven
   (:require [instaparse.core :as insta]
             [clojure.pprint :as pp]
-            [utils :as u]))
+            [utils :as u]
+            [clojure.spec :as s]
+    [advent.day11 :as geez]
+            ))
 
 (def example-in ["The first floor contains a hydrogen-compatible microchip and a lithium-compatible microchip."
                  "The second floor contains a hydrogen generator."
@@ -40,7 +43,7 @@
 (def example-chip-fried-floor [[:microchip "thulium"] [:generator "plutonium"] [:generator "strontium"]])
 (def example-safe-floor [[:generator "plutonium"] [:generator "strontium"]])
 
-(def example-lab {:elevator [:F1 [[:generator "plutonium"] [:generator "strontium"]]]
+(def example-lab {:e [:F1 [[:generator "plutonium"] [:generator "strontium"]]]
                   :F1 []
                   :F2 []
                   :F3 []
@@ -76,11 +79,27 @@
 ;;
 ;; State does not need to include any contents of elevator, because they are the transitions
 ;;
-(def starting-lab {:elevator :F1
-                   :F1 [[:generator "thulium"] [:microchip "thulium"] [:generator "plutonium"] [:generator "strontium"]],
-                   :F2 [[:microchip "plutonium"] [:microchip "strontium"]],
-                   :F3 [[:generator "promethium"] [:microchip "promethium"] [:generator "ruthenium"] [:microchip "ruthenium"]],
-                   :F4 []})
+(def starting-lab {:e :F1
+                    :F1 #{[:generator "thulium"] [:microchip "thulium"] [:generator "plutonium"] [:generator "strontium"]},
+                    :F2 #{[:microchip "plutonium"] [:microchip "strontium"]},
+                    :F3 #{[:generator "promethium"] [:microchip "promethium"] [:generator "ruthenium"] [:microchip "ruthenium"]},
+                    :F4 #{}})
+
+;;
+;; Also on first floor:
+;; An elerium generator.
+;; An elerium-compatible microchip.
+;; A dilithium generator.
+;; A dilithium-compatible microchip.
+;;
+(def second-part-starting-lab {:e :F1
+                               :F1 #{[:generator "thulium"] [:microchip "thulium"] [:generator "plutonium"] [:generator "strontium"]},
+                               :F2 #{[:microchip "plutonium"] [:microchip "strontium"]},
+                               :F3 #{[:generator "promethium"] [:microchip "promethium"]
+                                     [:generator "ruthenium"] [:microchip "ruthenium"]
+                                     [:generator "elerium"] [:microchip "elerium"]
+                                     [:generator "dilithium"] [:microchip "dilithium"]},
+                               :F4 #{}})
 
 (defn x-3 []
   (load-lift-combinations example-floor)
@@ -92,11 +111,11 @@
 ;;
 (defn move-one [lab to-floor-id lift-load]
   (let [_ (assert (set? lift-load))
-        current-floor-id (:elevator lab)
+        current-floor-id (:e lab)
         _ (assert current-floor-id (str "Strange lab no elevator"))
         ]
     (-> lab
-        (assoc :elevator to-floor-id)
+        (assoc :e to-floor-id)
         (update current-floor-id (fn [floor-content]
                                    ;(println (str "To rm " lift-load " from " floor-content))
                                    (vec (remove lift-load floor-content))))
@@ -104,7 +123,7 @@
 
 (defn x-4 []
   (let [res (move-one starting-lab :F4 #{[:generator "ruthenium"] [:microchip "ruthenium"]})]
-    (println "F4" (:F4 res) "F3" (:F3 res) "elevator:" (:elevator res))))
+    (println "F4" (:F4 res) "F3" (:F3 res) "elevator:" (:e res))))
 
 (def next-floors {:F4 [:F3]
                   :F3 [:F4 :F2]
@@ -119,7 +138,7 @@
 ;; Then remove all that don't cause problems.
 ;;
 (defn generate-possible-moves [lab-in]
-  (let [current-floor (:elevator lab-in)
+  (let [current-floor (:e lab-in)
         ]
     (for [new-floor (next-floors current-floor)
           lift-combo (load-lift-combinations (current-floor lab-in))
@@ -128,29 +147,51 @@
                      (safe-floor? (new-floor lab-out)))]
       lab-out)))
 
+(defn allowed? [lab-in lab-out new-floor]
+  (and (safe-floor? ((:e lab-in) lab-out))
+       (safe-floor? (new-floor lab-out))))
+
+;;
+;; Here we are doing the move a lot (product) and seeing if it is allowed. So a lot of new
+;; possible allowed states are the returned product.
+;; to-floor will mean the one above and below, so really will generate
+;; one in, many out, hence mapcat
+;;
+(defn lab-succ [lab]
+  (let [e (:e lab)]
+    (doall
+      (for [to-floor (next-floors e)
+            take-items (load-lift-combinations ((:e lab) lab))
+            :let [_ (when (not (seq take-items))
+                      (throw (ex-info "WTF??" {:take-items take-items
+                                               :state lab})))
+
+                  lab' (move-one lab to-floor take-items)]
+            :when (allowed? lab' e to-floor)]
+        lab'))))
+
 (defn x-5 []
-  (let [res (generate-possible-moves starting-lab)]
+  (let [f advent.day11/lab-succ #_generate-possible-moves
+        res (f starting-lab)]
     (pp/pprint res)
     (println (count res))))
 
 (defn destination-state? [lab-in]
-  ;(println "cfing" lab-in)
-  (= lab-in {:elevator :F4
-             :F1 []
-             :F2 []
-             :F3 []
-             :F4 []}))
+  (let [{:keys [e F1 F2 F3]} lab-in]
+    (and (= e :F4)
+         (= F1 F2 F3 #{}))))
 
-(def stop-at 15)
+;(def stop-at 15)
 (def heavy? false)
 (defn my-pr-str [labs]
   (if heavy?
     (u/pp-str labs 100)
     (str (count labs))))
 
-(defn breath-first-search [starting-lab]
+(defn breath-first-search [starting-lab generate-possible-moves destination-state?]
   (loop [already-tested #{starting-lab}
          last-round #{starting-lab}
+         total-visited 0
          times 1]
     (let [
           ;where-at (remove already-tested last-round)
@@ -158,16 +199,17 @@
           _ (println (str "Generated " (my-pr-str newly-generated) " from " (my-pr-str last-round) " at " times))
           got-there? (first (filter destination-state? newly-generated))]
       ;(println (str "Newly generated: " (count newly-generated)))
-      (if (or got-there? (= times stop-at))
+      (if got-there?
         (let []
           (println (str "Got there with: <" got-there? ">"))
           times)
         (let [now-tested (into already-tested newly-generated)]
-          (recur now-tested (into #{} (remove already-tested newly-generated)) (inc times)))))))
+          (recur now-tested (into #{} (remove already-tested newly-generated)) (+ total-visited (count last-round)) (inc times)))))))
 
-(defn x-6 []
-  (breath-first-search starting-lab))
-
+;;
+;; Copied from thegeez: https://github.com/thegeez/clj-advent-of-code-2016
+;; Mine above does the same. Actually needed to answer 2nd part of 13.
+;;
 (defn bfs [start succ stop]
   (if (stop start)
     [0 start]
@@ -192,11 +234,13 @@
                    doing)]
         (if-let [match (:done next)]
           [steps match]
-          (if (= steps stop-at)
-            [steps nil]
-            (recur next
-                   (into visited next)
-                   (inc steps))))))))
+          (recur next
+                 (into visited next)
+                 (inc steps)))))))
 
+;;
+;; I'm on a fair bit of memory (-Xmx4096m) and it dies at 9 when trying second-part-starting-lab
+;; Using all of geez stuff!
+;;
 (defn x-7 []
-  (bfs starting-lab generate-possible-moves destination-state?))
+  (bfs second-part-starting-lab #_(parse-floors input) #_(u/probe-on (geez/retrieve)) geez/lab-succ #_generate-possible-moves destination-state? #_geez/lab-stop?))
