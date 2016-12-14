@@ -50,7 +50,7 @@
                         (let [
                               [head second & tail] revisit-triples
                               _ (println (str "Instead staying at " idx " want to move s/how to " (vec revisit-triples)))
-                              _ (assert resume-at-idx (str "No resume recorded in thousand: " (dissoc thousand :revisit-triples)))
+                              _ (assert resume-at-idx (str "No resume recorded in thousand: " (dissoc thousand :revisit-triples) ", so far: " result-keys))
                               ]
                           (recur mode resume-at-idx (assoc thousand :revisit-triples tail) result-keys))
                         (recur mode (inc idx) thousand result-keys))))
@@ -62,12 +62,12 @@
                                 (let [-resume-idx (if (seq revisit-triples)
                                                    (ffirst revisit-triples)
                                                    resume-at-idx)]
-                                  (recur :triple -resume-idx {:revisit-triples (next revisit-triples)} result-keys))
+                                  (recur :triple -resume-idx {:revisit-triples revisit-triples} result-keys))
                                 (if has-five?
                                   (let [result-key [(dec resume-at-idx) idx hash-val countdown]]
                                     (recur :triple resume-at-idx {:revisit-triples revisit-triples} (conj result-keys result-key)))
                                   (let [new-revisit-triples (if trip?
-                                                              (conj revisit-triples [resume-at-idx trip? hash-val])
+                                                              (conj revisit-triples [idx trip? hash-val])
                                                               revisit-triples)]
                                     (recur mode
                                            (inc idx)
