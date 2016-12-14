@@ -22,13 +22,54 @@
 
 (defn search [seed]
   (loop [mode :triple
-         idx 0]
+         idx 0
+         thousand {}
+         result-keys []]
     (let [hash-val (md5 (str seed idx))
-          trip (triple hash-val)]
-      (case mode
-        :triple (if trip
-                  (recur :five-in-thousand (inc idx))
-                  (recur mode (inc idx)))))))
+          trip? (triple hash-val)]
+      (if (= 64 (count result-keys))
+        result-keys
+        (case mode
+          :triple (if trip?
+                    (recur :five-in-thousand
+                           (inc idx)
+                           {:resume-at-idx   (inc idx)
+                            :countdown       999
+                            :revisit-triples (or (:revisit-triples thousand) [])
+                            :sub-seq-fn      (five-times? (apply str (repeat 5 (first trip?))))}
+                           result-keys)
+                    (let [
+                          ;_ (println (str "thou: " thousand))
+                          {:keys [revisit-triples]} thousand]
+                      (if (seq revisit-triples)
+                        ;;
+                        ;; Because we have triples that have previously been collected, we can just use up the next
+                        ;; one to jump to, and keep doing this
+                        ;;
+                        (let [[[idx _ _] & tail] revisit-triples]
+                          (recur mode idx (assoc thousand :revisit-triples tail) result-keys))
+                        (recur mode (inc idx) thousand result-keys))))
+          :five-in-thousand (let [{:keys [countdown revisit-triples sub-seq-fn resume-at-idx]} thousand
+                                  has-five? (sub-seq-fn hash-val)
+                                  ]
+                              (if (zero? countdown)
+                                ;[idx hash-val revisit-triples]
+                                (let [resume-idx (if (seq revisit-triples)
+                                                   (ffirst revisit-triples)
+                                                   resume-at-idx)]
+                                  (recur :triple resume-idx {:revisit-triples (next revisit-triples)} result-keys))
+                                (if has-five?
+                                  (let [result-key [idx hash-val countdown]]
+                                    (recur :triple resume-at-idx {:revisit-triples revisit-triples} (conj result-keys result-key)))
+                                  (let [new-revisit-triples (if trip?
+                                                              (conj revisit-triples [idx trip? hash-val])
+                                                              revisit-triples)]
+                                    (recur mode
+                                           (inc idx)
+                                           (-> thousand
+                                               (update :countdown dec)
+                                               (assoc :revisit-triples new-revisit-triples))
+                                           result-keys))))))))))
 
 (def seed "abc")
 
