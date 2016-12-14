@@ -40,29 +40,34 @@
                            result-keys)
                     (let [
                           ;_ (println (str "thou: " thousand))
-                          {:keys [revisit-triples]} thousand]
+                          {:keys [revisit-triples resume-at-idx]} thousand
+                          ]
                       (if (seq revisit-triples)
                         ;;
                         ;; Because we have triples that have previously been collected, we can just use up the next
                         ;; one to jump to, and keep doing this
                         ;;
-                        (let [[[idx _ _] & tail] revisit-triples]
-                          (recur mode idx (assoc thousand :revisit-triples tail) result-keys))
+                        (let [
+                              [head second & tail] revisit-triples
+                              _ (println (str "Instead staying at " idx " want to move s/how to " (vec revisit-triples)))
+                              _ (assert resume-at-idx (str "No resume recorded in thousand: " (dissoc thousand :revisit-triples)))
+                              ]
+                          (recur mode resume-at-idx (assoc thousand :revisit-triples tail) result-keys))
                         (recur mode (inc idx) thousand result-keys))))
           :five-in-thousand (let [{:keys [countdown revisit-triples sub-seq-fn resume-at-idx]} thousand
                                   has-five? (sub-seq-fn hash-val)
                                   ]
                               (if (zero? countdown)
                                 ;[idx hash-val revisit-triples]
-                                (let [resume-idx (if (seq revisit-triples)
+                                (let [-resume-idx (if (seq revisit-triples)
                                                    (ffirst revisit-triples)
                                                    resume-at-idx)]
-                                  (recur :triple resume-idx {:revisit-triples (next revisit-triples)} result-keys))
+                                  (recur :triple -resume-idx {:revisit-triples (next revisit-triples)} result-keys))
                                 (if has-five?
-                                  (let [result-key [idx hash-val countdown]]
+                                  (let [result-key [(dec resume-at-idx) idx hash-val countdown]]
                                     (recur :triple resume-at-idx {:revisit-triples revisit-triples} (conj result-keys result-key)))
                                   (let [new-revisit-triples (if trip?
-                                                              (conj revisit-triples [idx trip? hash-val])
+                                                              (conj revisit-triples [resume-at-idx trip? hash-val])
                                                               revisit-triples)]
                                     (recur mode
                                            (inc idx)
