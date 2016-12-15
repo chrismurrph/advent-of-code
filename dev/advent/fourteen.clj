@@ -15,8 +15,9 @@
 ;; to get it.
 ;;
 (def only-go-to 100)
-(def only-interested-in-idx 22728)
+(def only-interested-in-idx #_39 22728)
 (def only-interested-in-nth (dec 64))
+(def allow-many? true)
 
 (defn printer [idx]
   (fn [txt]
@@ -64,9 +65,10 @@
                                 (>= age 1000))) triples)]
     old-removed))
 
-(defn triple-remover [five-timers-orig-index]
+(defn triple-remover [five-timers-orig-indexes]
+  (assert (set? five-timers-orig-indexes))
   (fn [{:keys [index]}]
-    (= five-timers-orig-index index)))
+    (five-timers-orig-indexes index)))
 
 (defn search-2 [seed]
   (loop [idx 0
@@ -80,36 +82,36 @@
       (if (>= (count result-keys) only-go-to)
         result-keys
         (let [
-              ;_ (pr (str "triples: " (mapv :index triples)))
+              _ (pr (str "triples: " (mapv :index triples)))
               triples-with-old-removed (vec (remove-old-triples idx triples))
-              ;_ (pr (str "triples-with-old-removed: " (mapv :index triples-with-old-removed)))
+              _ (pr (str "triples-with-old-removed: " (mapv :index triples-with-old-removed)))
               debug-reduce? (some #(= only-interested-in-idx %) (mapv :index triples-with-old-removed))
-              found-five-timer (reduce
-                                 (fn [{:keys [res done?] :as accum} {:keys [five-times-fn index hash triple] :as elem}]
-                                   (if (not done?)
-                                     (let [res? (five-times-fn hash-val)]
-                                       (if res?
-                                         (let [new-five-timer {:orig-hash       hash
-                                                               :triple          triple
-                                                               :five-times-hash hash-val
-                                                               :orig-index      index
-                                                               :found-index     idx}
-                                               _ (when debug-reduce?
-                                                   (println (str "new-acc: " new-five-timer)))
-                                               ]
-                                           {:res new-five-timer :done? true})
-                                         accum))
-                                     (do
-                                       (when debug-reduce?
-                                         ;(println (str "Missing: " elem))
-                                         )
-                                       accum)))
-                                 {:res nil :done? false}
-                                 triples-with-old-removed)
-              _ (when (and (:done? found-five-timer)
-                           (= (:orig-index found-five-timer) only-interested-in-idx))
-                  (println "--------> found-five-timer:" (:res found-five-timer)))
-              remover (triple-remover (-> found-five-timer :res :orig-index))
+              five-timers (reduce
+                            (fn [{:keys [res done?] :as accum} {:keys [five-times-fn index hash triple] :as elem}]
+                              (if (or allow-many? (not done?))
+                                (let [res? (five-times-fn hash-val)]
+                                  (if res?
+                                    (let [new-five-timer {:orig-hash       hash
+                                                          :triple          triple
+                                                          :five-times-hash hash-val
+                                                          :orig-index      index
+                                                          :found-index     idx}
+                                          _ (when debug-reduce?
+                                              (println (str "new-acc: " new-five-timer)))
+                                          ]
+                                      {:res (conj res new-five-timer) :done? true})
+                                    accum))
+                                (do
+                                  (when debug-reduce?
+                                    ;(println (str "Missing: " elem))
+                                    )
+                                  accum)))
+                            {:res [] :done? false}
+                            triples-with-old-removed)
+              found-five-timers (:res five-timers)
+              _ (when (seq found-five-timers) #_(seq (filter #(= only-interested-in-idx (:orig-index %)) found-five-timers))
+                  (println "--------> found-five-timers:" found-five-timers))
+              remover (triple-remover (set (mapv #(-> % :orig-index) found-five-timers)))
               updated-triples (vec (remove remover triples-with-old-removed))
               new-triple (when triple?
                            ;(println "triple:" triple? "at" idx)
@@ -119,23 +121,31 @@
                             :five-times-fn (five-times? (apply str (repeat 5 (first triple?))))})
               further-updated-triples (if new-triple (add-new-triple new-triple updated-triples) updated-triples)
               _ (pr (last further-updated-triples))
-              new-result-keys (if (:res found-five-timer)
-                                (conj result-keys (:res found-five-timer))
-                                result-keys)
+              new-result-keys (concat result-keys found-five-timers)
               ]
           (recur (inc idx) new-result-keys further-updated-triples)
           )))))
 
-(def seed "abc")
+(def example-salt "abc")
+(def real-salt "yjdafjpo")
+(def seed example-salt)
 
 (defn x []
   (let [sorted-results (sort-by :orig-index (search-2 seed))
-        res (nth sorted-results only-interested-in-nth)
-        interested (filter #(= only-interested-in-idx (:orig-index %)) sorted-results)
+        ;res (nth sorted-results only-interested-in-nth)
+        interested (keep-indexed (fn [idx res]
+                                   (when (= only-interested-in-idx (:orig-index res))
+                                     [(inc idx) res]))
+                                 sorted-results)
         ]
+    ;(pp/pprint sorted-results)
     (pp/pprint interested)
-    (pp/pprint (filter #(= 22804 (:found-index %)) sorted-results))))
+    ;(pp/pprint (filter #(= 22804 (:found-index %)) sorted-results))
+    ))
 
+
+
+;; IGNORE
 (comment
   (defn x-1 []
     (let [hash (md5 "abc18")
