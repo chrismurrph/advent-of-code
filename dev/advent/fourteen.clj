@@ -16,7 +16,7 @@
 ;;
 (def only-go-to 100)
 (def only-interested-in-idx #_39 22728)
-(def only-interested-in-nth (dec 64))
+(def only-interested-in-nth 64)
 (def allow-many? true)
 
 (defn printer [idx]
@@ -128,13 +128,13 @@
 
 (def example-salt "abc")
 (def real-salt "yjdafjpo")
-(def seed example-salt)
+(def seed real-salt)
 
 (defn x []
   (let [sorted-results (sort-by :orig-index (search-2 seed))
         ;res (nth sorted-results only-interested-in-nth)
         interested (keep-indexed (fn [idx res]
-                                   (when (= only-interested-in-idx (:orig-index res))
+                                   (when (= only-interested-in-nth (inc idx))
                                      [(inc idx) res]))
                                  sorted-results)
         ]
