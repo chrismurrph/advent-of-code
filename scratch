@@ -1,11 +1,178 @@
 
-({:orig-hash "83501e9109999965af11270ef8d61a4f", :orig-index 200} {:orig-hash "7af7fa13b999d68bbce565971ddbae27", :orig-index 110}
-{:orig-hash "ae2e85dd75d63e916a525df95e999ea0", :orig-index 92} {:orig-hash "d3037333338c0e36482facef46a5d375", :orig-index 792}
-{:orig-hash "f4fc8ddb4c3336ad9fc5e6985bf10bfc", :orig-index 771} {:orig-hash "d2c1333bc7b740a6af0c51eded05e70f", :orig-index 461}
-{:orig-hash "77b05e16607a333bae2dee537ce16b9a", :orig-index 459} {:orig-hash "b76a587a333a5de4fbd566b426e1254c", :orig-index 314}
-{:orig-hash "3aeeeee1367614f3061d165a5fe3cac3", :orig-index 816} {:orig-hash "02164648eee4fd760cdab7e343effd74", :orig-index 184}
-{:orig-hash "347dac6ee8eeea4652c7476d0f97bee5", :orig-index 39} {:orig-hash "edd652be33204a7a544444d3c722fc01", :orig-index 1261}
-{:orig-hash "2e65dc4b3a55644440750cb643d3547c", :orig-index 1144} {:orig-hash "067e32c47bb94441fb1ddb164028f1a0", :orig-index 955} {:orig-hash "6224443f4f20b285f198a5928240b8f9", :orig-index 887} {:orig-hash "05cc3a44479f138930aef93d09adb271", :orig-index 781} {:orig-hash "3168351b76dee9d74442c60fb7947758", :orig-index 489} {:orig-hash "d847a4440f2a4423b79fe9bdc1cde659", :orig-index 385} {:orig-hash "d3c939a6e3739444983e1961fad091d8", :orig-index 343} {:orig-hash "d7c86a1c1af63c851fe876e44427da83", :orig-index 291} {:orig-hash "5b67f4fddddd4715225d90a48d64ad3f", :orig-index 6392} {:orig-hash "f1563b896d2ddda0f1f45b8adec413b7", :orig-index 6219} {:orig-hash "b892716e7eae5f8ddd9339f70842b358", :orig-index 6093} {:orig-hash "0e30d5ff60b6a89ddd9e54697dab036a", :orig-index 6016} {:orig-hash "a510c007dddee781e646b4f5fb8d8556", :orig-index 5783} {:orig-hash "c50ff03d396edaddd83f4276ab16bb20", :orig-index 5781} {:orig-hash "839454c56aa6dddc15cfb3d2409bb5f1", :orig-index 5742} {:orig-hash "33700000d206321cabda144e627f9c58", :orig-index 8735} {:orig-hash "5d4e1288f07a53bd6ad1a8000bca06eb", :orig-index 8730} {:orig-hash "0a164547f03ee46ece5f2c2e15580007", :orig-index 8672} {:orig-hash "1d000dd00e3653c29e0fa801d35de7b4", :orig-index 8626} {:orig-hash "0a09e8a057d6912b5cd26d86000171f1", :orig-index 8503} {:orig-hash "b91baf5000515c05cd2300a88abe7e6e", :orig-index 8431} {:orig-hash "66c6c08de62ab7000533b6b6450cf1f0", :orig-index 8407} {:orig-hash "3dbee9bccf49a50000346e221d54bb93", :orig-index 8205} {:orig-hash "9c62f9cddf7000fc82243fe63f633397", :orig-index 7937} {:orig-hash "feb714940e4bec85b85e1ae582fb0001", :orig-index 7918} {:orig-hash "21dc11447df0bbab74d750bac5b66000", :orig-index 7858} {:orig-hash "c3d313e7a72ea2111114dd4963979596", :orig-index 8811} {:orig-hash "5bb71493cb844593059c9385af111498", :orig-index 8517} {:orig-hash "f11113032a16c4dfefcaa1d3eb43357c", :orig-index 8375} {:orig-hash "f611148c30ba768ee1be17cccb00acda", :orig-index 8232} {:orig-hash "cc1111a7b059f0326fe4d4fc96fb50d3", :orig-index 8189} {:orig-hash "eda733b036c18c11134f8c60faacafc9", :orig-index 8183} {:orig-hash "1611103e70484e441e006f1bfb2b3374", :orig-index 8045} {:orig-hash "a508b217c92312d6a111af6253bff7bb", :orig-index 8042} {:orig-hash "fab1a818df14b380111ff51230f15f5b", :orig-index 7833} {:orig-hash "b5dd0c7468236111114393c27c5240a0", :orig-index 9562} {:orig-hash "7253e53e81115f72f6540cae6a2a5e59", :orig-index 9536} {:orig-hash "2edf9fa11161b0286de6f62ee44e8e4d", :orig-index 9497} {:orig-hash "72cac2742bbbbbe00b99a814c73ff80e", :orig-index 13886} {:orig-hash "c8e73ad52e71b460b2a2bebbb6efa8a8", :orig-index 13663} {:orig-hash "24826802dd3d78327eac3b7b02bbbf29", :orig-index 13560} {:orig-hash "2581d6a23925ef5f6c55241c821abbb3", :orig-index 13479} {:orig-hash "bbbef7b3f98b65e148ae2a617786a11f", :orig-index 13439} {:orig-hash "bbbe024fb60e070c922a3c9dd81454c6", :orig-index 13268} {:orig-hash "614079777771bb3be988406f8f346f83", :orig-index 16672} {:orig-hash "54a71b5c827b7bf88b67776339e1568d", :orig-index 16479} {:orig-hash "561ad5b016b7771247e33564ffc3d7b2", :orig-index 16342} {:orig-hash "a0872401e67ee77722ba756ba03cea2f", :orig-index 16187} {:orig-hash "8a77735462adb00c441a99571e351b7b", :orig-index 15883} {:orig-hash "db94f13a807206bca93ea732ed877789", :orig-index 15758} {:orig-hash "4a31aaaaad6e0a6dc6c5911f2fef2321", :orig-index 20994} {:orig-hash "1f7eb500d1f09b3569a762ee5c8aaacd", :orig-index 20669} {:orig-hash "67e1d093a6cfe1ea8b40173aaad64273", :orig-index 20635} {:orig-hash "3946e417e23aaabb3735a4551718ffff", :orig-index 20582} {:orig-hash "714981a50246c55aaa14bc8baff48cf6", :orig-index 20371} {:orig-hash "2663ce2f67f5d4e35aab8aaa84da292f", :orig-index 20087})
+([:elevator :F4]
+ [:F1
+  [[:generator "thulium"]
+   [:microchip "thulium"]
+   [:generator "plutonium"]
+   [:generator "strontium"]]]
+ [:F2 [[:microchip "plutonium"] [:microchip "strontium"]]]
+ [:F3
+  [[:generator "promethium"]
+   [:generator "ruthenium"]
+   [:microchip "ruthenium"]]]
+ [:F4 [[:microchip "promethium"]]]
+ [:elevator :F4]
+ [:F1
+  [[:generator "thulium"]
+   [:microchip "thulium"]
+   [:generator "plutonium"]
+   [:generator "strontium"]]]
+ [:F2 [[:microchip "plutonium"] [:microchip "strontium"]]]
+ [:F3 [[:generator "ruthenium"] [:microchip "ruthenium"]]]
+ [:F4 [[:microchip "promethium"] [:generator "promethium"]]]
+ [:elevator :F4]
+ [:F1
+  [[:generator "thulium"]
+   [:microchip "thulium"]
+   [:generator "plutonium"]
+   [:generator "strontium"]]]
+ [:F2 [[:microchip "plutonium"] [:microchip "strontium"]]]
+ [:F3
+  [[:generator "promethium"]
+   [:microchip "promethium"]
+   [:generator "ruthenium"]]]
+ [:F4 [[:microchip "ruthenium"]]]
+ [:elevator :F4]
+ [:F1
+  [[:generator "thulium"]
+   [:microchip "thulium"]
+   [:generator "plutonium"]
+   [:generator "strontium"]]]
+ [:F2 [[:microchip "plutonium"] [:microchip "strontium"]]]
+ [:F3 [[:generator "promethium"] [:microchip "promethium"]]]
+ [:F4 [[:generator "ruthenium"] [:microchip "ruthenium"]]]
+ [:elevator :F4]
+ [:F1
+  [[:generator "thulium"]
+   [:microchip "thulium"]
+   [:generator "plutonium"]
+   [:generator "strontium"]]]
+ [:F2 [[:microchip "plutonium"] [:microchip "strontium"]]]
+ [:F3 [[:microchip "promethium"] [:microchip "ruthenium"]]]
+ [:F4 [[:generator "ruthenium"] [:generator "promethium"]]]
+ [:elevator :F4]
+ [:F1
+  [[:generator "thulium"]
+   [:microchip "thulium"]
+   [:generator "plutonium"]
+   [:generator "strontium"]]]
+ [:F2 [[:microchip "plutonium"] [:microchip "strontium"]]]
+ [:F3
+  [[:generator "promethium"]
+   [:microchip "promethium"]
+   [:microchip "ruthenium"]]]
+ [:F4 [[:generator "ruthenium"]]]
+ [:elevator :F4]
+ [:F1
+  [[:generator "thulium"]
+   [:microchip "thulium"]
+   [:generator "plutonium"]
+   [:generator "strontium"]]]
+ [:F2 [[:microchip "plutonium"] [:microchip "strontium"]]]
+ [:F3
+  [[:microchip "promethium"]
+   [:generator "ruthenium"]
+   [:microchip "ruthenium"]]]
+ [:F4 [[:generator "promethium"]]]
+ [:elevator :F2]
+ [:F1
+  [[:generator "thulium"]
+   [:microchip "thulium"]
+   [:generator "plutonium"]
+   [:generator "strontium"]]]
+ [:F2
+  [[:microchip "plutonium"]
+   [:microchip "strontium"]
+   [:microchip "promethium"]]]
+ [:F3
+  [[:generator "promethium"]
+   [:generator "ruthenium"]
+   [:microchip "ruthenium"]]]
+ [:F4 []]
+ [:elevator :F2]
+ [:F1
+  [[:generator "thulium"]
+   [:microchip "thulium"]
+   [:generator "plutonium"]
+   [:generator "strontium"]]]
+ [:F2
+  [[:microchip "plutonium"]
+   [:microchip "strontium"]
+   [:microchip "promethium"]
+   [:generator "promethium"]]]
+ [:F3 [[:generator "ruthenium"] [:microchip "ruthenium"]]]
+ [:F4 []]
+ [:elevator :F2]
+ [:F1
+  [[:generator "thulium"]
+   [:microchip "thulium"]
+   [:generator "plutonium"]
+   [:generator "strontium"]]]
+ [:F2
+  [[:microchip "plutonium"]
+   [:microchip "strontium"]
+   [:microchip "ruthenium"]]]
+ [:F3
+  [[:generator "promethium"]
+   [:microchip "promethium"]
+   [:generator "ruthenium"]]]
+ [:F4 []]
+ [:elevator :F2]
+ [:F1
+  [[:generator "thulium"]
+   [:microchip "thulium"]
+   [:generator "plutonium"]
+   [:generator "strontium"]]]
+ [:F2
+  [[:microchip "plutonium"]
+   [:microchip "strontium"]
+   [:generator "ruthenium"]
+   [:microchip "ruthenium"]]]
+ [:F3 [[:generator "promethium"] [:microchip "promethium"]]]
+ [:F4 []]
+ [:elevator :F2]
+ [:F1
+  [[:generator "thulium"]
+   [:microchip "thulium"]
+   [:generator "plutonium"]
+   [:generator "strontium"]]]
+ [:F2
+  [[:microchip "plutonium"]
+   [:microchip "strontium"]
+   [:generator "ruthenium"]
+   [:generator "promethium"]]]
+ [:F3 [[:microchip "promethium"] [:microchip "ruthenium"]]]
+ [:F4 []]
+ [:elevator :F2]
+ [:F1
+  [[:generator "thulium"]
+   [:microchip "thulium"]
+   [:generator "plutonium"]
+   [:generator "strontium"]]]
+ [:F2
+  [[:microchip "plutonium"]
+   [:microchip "strontium"]
+   [:generator "ruthenium"]]]
+ [:F3
+  [[:generator "promethium"]
+   [:microchip "promethium"]
+   [:microchip "ruthenium"]]]
+ [:F4 []]
+ [:elevator :F2]
+ [:F1
+  [[:generator "thulium"]
+   [:microchip "thulium"]
+   [:generator "plutonium"]
+   [:generator "strontium"]]]
+ [:F2
+  [[:microchip "plutonium"]
+   [:microchip "strontium"]
+   [:generator "promethium"]]]
+ [:F3
+  [[:microchip "promethium"]
+   [:generator "ruthenium"]
+   [:microchip "ruthenium"]]]
+ [:F4 []])
 
 ((x3)
  (3x3)ABC
@@ -18,22 +185,20 @@ X
 
 445
 
-AssertionError Assert failed: 
+AssertionError Assert failed:
 
-{:index 8, :mode :mode/normal, :take-outs 
+{:index 8, :mode :mode/normal, :take-outs
 
 [
-{:index 1, :takeout "ABC", :bracket-contents {:counting-out 3, :repeat-times 3}} 
-{:index 3, :takeout "XY", :bracket-contents {:counting-out 2, :repeat-times 3}} 
-{:index 5, :takeout "PQRST", :bracket-contents {:counting-out 5, :repeat-times 2}} 
-{:index 7, :takeout "(3x2)TWO(5x7)SEVEN", :bracket-contents {:counting-out 18, :repeat-times 9}}], 
+{:index 1, :takeout "ABC", :bracket-contents {:counting-out 3, :repeat-times 3}}
+{:index 3, :takeout "XY", :bracket-contents {:counting-out 2, :repeat-times 3}}
+{:index 5, :takeout "PQRST", :bracket-contents {:counting-out 5, :repeat-times 2}}
+{:index 7, :takeout "(3x2)TWO(5x7)SEVEN", :bracket-contents {:counting-out 18, :repeat-times 9}}],
 
 :normals [
-{:index 0, :normal nil} 
-{:index 2, :normal nil} 
-{:index 4, :normal nil} 
-{:index 6, :normal "X"}], 
+{:index 0, :normal nil}
+{:index 2, :normal nil}
+{:index 4, :normal nil}
+{:index 6, :normal "X"}],
 
 :current nil, :bracket-contents nil}
-
-

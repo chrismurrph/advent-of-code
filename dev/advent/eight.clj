@@ -22,8 +22,8 @@
 (defn to-hiccup [s]
   (->> (first (grammar s))
        (insta/transform
-         {:int clojure.edn/read-string :direction (fn [in] (case in "row" :row "column" :col))}))
-  )
+         {:int clojure.edn/read-string :direction (fn [in] (case in "row" :row "column" :col))})))
+
 
 ;;
 ;; Add up the areas of all the rectangles
@@ -31,15 +31,15 @@
 (defn first-part-correct []
   (let [input test-input
         input (slurp "./advent/eight.txt")
-        raw-series (line-seq (BufferedReader. (StringReader. input)))
-        ]
+        raw-series (line-seq (BufferedReader. (StringReader. input)))]
+
     (->> raw-series
          (map to-hiccup)
          (filter #(= :rect (-> % first)))
          (map #(* (second %) (nth % 2)))
-         (reduce +)
-         )
-    ))
+         (reduce +))))
+
+
 
 (def nothing " ")
 (def something "x")
@@ -87,9 +87,9 @@
                                                  [row-or-col-num y]))
         ;_ (println "existing row: " whole-row-or-column)
         ;_ (println "new row: " whole-new-row-or-column)
-        changlings (map vector whole-new-row-or-column all-values)
+        changlings (map vector whole-new-row-or-column all-values)]
         ;_ (println "changlings" changlings)
-        ]
+
     (reduce
       (fn [acc [[x y] b?]]
         (turn b? acc x y))
@@ -117,10 +117,10 @@
       product)))
 
 #_(defn x-1 []
-  (let [state (mapv make-row (range total-rows))
-        new-state (rect-on state 3 2)]
-    (rotate-column new-state 1 1)
-    ))
+   (let [state (mapv make-row (range total-rows))
+         new-state (rect-on state 3 2)]
+     (rotate-column new-state 1 1)))
+
 
 (defn second-part [total-rows total-cols]
   (let [raw-series test-input
@@ -132,8 +132,8 @@
                           (map to-hiccup))
         _ (println instructions)
         row-rotator (rotate-row total-cols)
-        column-rotator (rotate-column total-rows)
-        ]
+        column-rotator (rotate-column total-rows)]
+
     (reduce
       (fn [acc [cmd & tail]]
         (case cmd
@@ -141,8 +141,8 @@
           :rotate (let [[selector row-or-col quantity] tail]
                     (case selector
                       :row (row-rotator acc row-or-col quantity)
-                      :col (column-rotator acc row-or-col quantity))))
-        )
+                      :col (column-rotator acc row-or-col quantity)))))
+
       state
       instructions)))
 
