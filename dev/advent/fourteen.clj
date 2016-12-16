@@ -18,6 +18,7 @@
 (def only-interested-in-idx #_39 22728)
 (def only-interested-in-nth 64)
 (def allow-many? true)
+(def total-rehashes 2017)
 
 (defn printer [idx]
   (fn [txt]
@@ -42,7 +43,15 @@
         padding (apply str (repeat (- size (count sig)) "0"))]
     (str padding sig)))
 
-(def md5 (memoize -md5))
+(defn- -md5-repeated [rehash-times]
+  (let [times (inc rehash-times)]
+    (fn [s]
+      (first (drop (dec times) (take times (iterate -md5 s)))))))
+
+(def md5 (memoize (-md5-repeated total-rehashes)))
+
+(defn x-1 []
+  (md5 "abc0"))
 
 (defn add-new-triple [triple triples]
   (let [existing-triples (into #{} (map :triple triples))
