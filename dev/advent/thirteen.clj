@@ -43,10 +43,10 @@
 (defn bfs [start succ stop]
   (if (stop start)
     [0 start]
-    (loop [doing #{start}
+    (loop [to-do #{start}
            visited #{start}
            steps 1]
-      (println "steps" steps " visited " (count visited) " doing " (count doing))
+      (println "steps done:" (dec steps) "visited:" (count visited) "to do:" (count to-do))
       #_(println "visited" visited)
       (let [next (transduce
                    (comp
@@ -61,22 +61,19 @@
                      (halt-when :done))
                    conj
                    #{}
-                   doing)]
+                   to-do)]
         (if-let [match (:done next)]
           [steps match]
           (recur next
                  (into visited next)
                  (inc steps)))))))
 
-;;
-;; This one can't yet ansewr the second part, but the one above can (visited at step 51).
-;; So perhaps we really do need a transducer - work out later when finish 11.
-;;
 (defn breath-first-search [starting-lab generate-possible-moves destination-state?]
   (loop [already-tested #{starting-lab}
          last-round #{starting-lab}
          times 1]
     (let [
+          _ (println "steps done:" (dec times) "visited:" (count already-tested))
           newly-generated (mapcat generate-possible-moves last-round)
           got-there? (first (filter destination-state? newly-generated))]
       (if got-there?

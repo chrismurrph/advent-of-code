@@ -2,8 +2,13 @@
   (:require [clojure.string :as str]
             [clojure.pprint :as pp]))
 
-(defn r []
-  (require 'user :reload))
+(defn indexes-by [f coll]
+  (sequence
+    (comp
+      (map-indexed vector)
+      (filter (comp f second))
+      (map first))
+    coll))
 
 (defn get-now [] (.getTime (java.util.Date.)))
 

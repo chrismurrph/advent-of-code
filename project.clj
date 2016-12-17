@@ -8,7 +8,9 @@
                  [com.taoensso/timbre "4.3.1"]
                  [org.clojure/tools.namespace "0.2.11"]
                  [instaparse "1.4.2"]
-                 [proto-repl "0.3.1"]]
+                 [proto-repl "0.3.1"]
+                 [medley "0.8.4"]
+                 [org.clojure/math.combinatorics "0.1.1"]]
 
   :main ^:skip-aot parser.core
   :target-path "target/%s"

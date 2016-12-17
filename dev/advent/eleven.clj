@@ -2,8 +2,10 @@
   (:require [instaparse.core :as insta]
             [clojure.pprint :as pp]
             [utils :as u]
-            [clojure.spec :as s]
-    [advent.day11 :as geez]
+            [medley.core :refer [distinct-by]]
+            [clojure.set :refer [difference union intersection]]
+            [advent.day11 :as geez]
+            [clojure.math.combinatorics :as combo]
             ))
 
 (def example-in ["The first floor contains a hydrogen-compatible microchip and a lithium-compatible microchip."
@@ -43,7 +45,7 @@
 (def example-chip-fried-floor [[:microchip "thulium"] [:generator "plutonium"] [:generator "strontium"]])
 (def example-safe-floor [[:generator "plutonium"] [:generator "strontium"]])
 
-(def example-lab {:e [:F1 [[:generator "plutonium"] [:generator "strontium"]]]
+(def example-lab {:e  [:F1 [[:generator "plutonium"] [:generator "strontium"]]]
                   :F1 []
                   :F2 []
                   :F3 []
@@ -79,11 +81,11 @@
 ;;
 ;; State does not need to include any contents of elevator, because they are the transitions
 ;;
-(def starting-lab {:e :F1
-                    :F1 #{[:generator "thulium"] [:microchip "thulium"] [:generator "plutonium"] [:generator "strontium"]},
-                    :F2 #{[:microchip "plutonium"] [:microchip "strontium"]},
-                    :F3 #{[:generator "promethium"] [:microchip "promethium"] [:generator "ruthenium"] [:microchip "ruthenium"]},
-                    :F4 #{}})
+(def starting-lab {:e  :F1
+                   :F1 #{[:generator "thulium"] [:microchip "thulium"] [:generator "plutonium"] [:generator "strontium"]},
+                   :F2 #{[:microchip "plutonium"] [:microchip "strontium"]},
+                   :F3 #{[:generator "promethium"] [:microchip "promethium"] [:generator "ruthenium"] [:microchip "ruthenium"]},
+                   :F4 #{}})
 
 ;;
 ;; Also on first floor:
@@ -92,7 +94,7 @@
 ;; A dilithium generator.
 ;; A dilithium-compatible microchip.
 ;;
-(def second-part-starting-lab {:e :F1
+(def second-part-starting-lab {:e  :F1
                                :F1 #{[:generator "thulium"] [:microchip "thulium"] [:generator "plutonium"] [:generator "strontium"]},
                                :F2 #{[:microchip "plutonium"] [:microchip "strontium"]},
                                :F3 #{[:generator "promethium"] [:microchip "promethium"]
@@ -164,7 +166,7 @@
             take-items (load-lift-combinations ((:e lab) lab))
             :let [_ (when (not (seq take-items))
                       (throw (ex-info "WTF??" {:take-items take-items
-                                               :state lab})))
+                                               :state      lab})))
 
                   lab' (move-one lab to-floor take-items)]
             :when (allowed? lab' e to-floor)]
@@ -244,3 +246,136 @@
 ;;
 (defn x-7 []
   (bfs second-part-starting-lab #_(parse-floors input) #_(u/probe-on (geez/retrieve)) geez/lab-succ #_generate-possible-moves destination-state? #_geez/lab-stop?))
+
+;;
+;; +ive is generator, -ive is chip
+;; The actual number is the type of a rock
+;;
+(def start-state2 {:pos    0
+                   :floors {0 #{1 -1 100000 -100000 1000000 -1000000}
+                            1 #{10 100 1000 10000}
+                            2 #{-10 -100 -1000 -10000}
+                            3 #{}}})
+;;
+;; Above in canonical form. There are 3 matched pairs on floor 0, hence: [0 0] [0 0] [0 0].
+;; Each pair shows where the chip and generator are for an unnamed rock.
+;;
+;; [0 ([0 0] [0 0] [0 0] [2 1] [2 1] [2 1] [2 1])]
+
+;;
+;; kys is every type of rock in a set
+;; init is a {} keyed by these keys, where every value is [nil nil]
+;; For example a mapentry of init might be [1000 [nil nil]]
+;; We reduce over each mapentry that has come in (eg. [0 #{1 -1 100000 -100000 1000000 -1000000}])
+;; , each time making init (accum) more complete.
+;; This nested reduce is not complicated because it is the same acc, and there are items on each floor.
+;; acc becomes %1 in assoc-in and %2 is an item, say -100000
+;; The [] part of assoc-in reflects the structure of acc, which is structure of init. assoc-in goes into
+;; keys of maps and positions (nths) of vectors. So -ive is going to be at position 0, and +ive at position
+;; 1. What we are actually putting into the vector is p, the floor. Thus a produced mapentry of 10 [2 1]
+;; means that 10 (representing some rock, say dilithium) has its chip on floor 2 and its generator on floor
+;; 1. For our initial states only floors 0, 1 and 2 have chips/generators on them.
+;;
+;; This function is producing pairs and each pair is for a rock type, and is of form [chip-floor generator-floor].
+(defn canonical [floors]
+  (let [kys (set (map #(Math/abs %) (apply concat (vals floors))))
+        init (zipmap kys (repeat [nil nil]))
+        _ (println init)]
+    (-> (reduce (fn [acc [p items]]
+                  (reduce #(assoc-in %1 [(Math/abs %2)
+                                         (if (pos? %2) 1 0)] p) acc items))
+                init floors)
+        vals
+        sort
+        )))
+
+(defn to-canonical [{:keys [pos floors]}]
+  [pos (canonical floors)])
+
+(def state-score #(-> % second meta :score))
+
+(def valid-floors?
+  (memoize
+    (fn [n]
+      (let [gens (set (keep second n))
+            chips (set (keep first (filter #(apply not= %) n)))]
+        (empty? (intersection gens chips))))))
+
+(def safe-elevator?
+  (memoize
+    (fn [positions]
+      (or (= 1 (count positions))
+          (every? odd? positions)
+          (every? even? positions)
+          (let [chip (some #(when (even? %) %) positions)]
+            ((set positions) (inc chip)))))))
+
+(def finished-score 10000000)
+
+(defn finished? [n] (= #{[3 3]} (set n)))
+
+(def score
+  (memoize
+    (fn [n]
+      (if (finished? n)
+        finished-score
+        (* 10 (count (filter #(= 3 %) (flatten n))))))))
+
+
+(def next-possible-states
+  (memoize
+    (fn [[flr pairings]]
+      (let [flattened (vec (flatten pairings))
+            lower-bound (reduce min flattened)
+            places (u/indexes-by #(= % flr) flattened)
+            positions' (->> (map list places)
+                            (concat (combo/combinations places 2))
+                            (filter safe-elevator?))
+            moves (for [positions positions'
+                        up-or-down [1 -1]
+                        :let [next-floor (+ flr up-or-down)]
+                        :when (<= lower-bound next-floor 3)]
+                    [next-floor
+                     (->> (reduce #(assoc %1 %2 next-floor) flattened positions)
+                          (partition 2)
+                          (map vec)
+                          sort)])]
+        (doall
+          (sequence
+            (comp
+              (filter (comp valid-floors? second))
+              (distinct-by second)
+              (map #(vary-meta % assoc :score (score (second %)))))
+            moves))))))
+
+;; do one level at a time
+(defn breadth-first-level [ordered-state-set]
+  (println "level" (count (ffirst ordered-state-set)))
+  (println "count" (count ordered-state-set))
+  (->> ordered-state-set
+       (mapcat (fn [[prev-states state]]
+                 (let [last-canonical (second (last prev-states))]
+                   (->> (next-possible-states state)
+                        (filter #(not= last-canonical (second %)))
+                        #_(filter (comp (complement (set prev-states)) second))
+                        (map #(vector (conj prev-states state) %))))))
+       (distinct-by second)
+       (sort-by state-score >)))
+
+(def finished-score 10000000)
+
+;;
+;; There's going to be a lot of things that are [prev-states state] as `iterate` processes. Just start off
+;; with one.
+;;
+(defn breadth-first-search [limit start-state]
+  (->> (iterate breadth-first-level [[[] (to-canonical start-state)]])
+       (take-while #(and (not-empty %)
+                         (let [scr (state-score (first %))]
+                           (println "-" scr)
+                           (not= scr finished-score))))
+       (take limit)
+       count))
+
+(defn x-8 []
+  (to-canonical start-state2))
