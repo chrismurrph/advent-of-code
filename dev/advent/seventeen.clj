@@ -1,21 +1,41 @@
 (ns advent.seventeen
   (:import (java.security MessageDigest)))
 
+(def counter (atom 0))
+(def counted 20)
+(defn true-until-counted []
+  (if (= counted @counter)
+    false
+    (do
+      (swap! counter inc)
+      true)))
+
+(defn longest [past-visits]
+  (let [
+        lengths (mapv #(-> % first count) past-visits)
+        ]
+    ;(max past-visits)
+    ;(println "Need find longest of: " lengths)
+    (if (seq lengths)
+      (apply max lengths)
+      0)
+    ))
+
 (defn breadth-first-search [max-steps
                             starting-lab
                             generate-possibilities
                             destination-state?
-                            short-circuit-detector-fn?]
+                            find-max?]
   (loop [already-tested #{starting-lab}
          last-round #{starting-lab}
          times 0
-         most-distant-candidates nil]
+         most-distant-candidates []]
     (assert (set? already-tested))
     (if (< times max-steps)
-      (let [_ (println "steps done:" times "visited:" (count already-tested))
+      (let [_ (println "steps done:" times "visited:" (count already-tested) "longest:" (longest most-distant-candidates))
             newly-generated (mapcat generate-possibilities last-round)]
         (if (seq newly-generated)
-          (if (not short-circuit-detector-fn?)
+          (if (not find-max?)
             (let [got-there? (first (filter destination-state? newly-generated))]
               (if got-there?
                 (do
@@ -28,16 +48,12 @@
                   ;; We want to overwrite/save the can-get-theres until we reach situation where there are no more
                   ;; possibilities. Then these saved paths are the ways to get there via the longest route.
                   ;;
-                  ;; A problem remaining is that there are always more possibilities if can re-trace your route - just
-                  ;; go around in a circle. So to avoid this problem we need to detect the circle.
-                  ;;
-                  non-short-new-gens (remove short-circuit-detector-fn? newly-generated)
                   can-get-theres (filter destination-state? newly-generated)]
-              (let [now-tested (into already-tested non-short-new-gens)]
-                (recur now-tested (into #{} (remove already-tested non-short-new-gens)) (inc times)
+              (let [now-tested (into already-tested newly-generated)]
+                (recur now-tested (into #{} (remove (into already-tested can-get-theres) newly-generated)) (inc times)
                        (or (seq can-get-theres) most-distant-candidates)))))
-          (if short-circuit-detector-fn?
-            (assert false most-distant-candidates)
+          (if find-max?
+            (assert false "Look at longest - that's the answer to part two")
             [:dead-end "Nowhere to go, not even back where came from" already-tested])))
       [:need-more-steps "Need give more steps then run again" already-tested])))
 
@@ -52,7 +68,10 @@
 (def -example-passcode "hijkl")
 (def -real-passcode "yjjvjgan")
 (def -part-2-example-1 "ihgpwlah")
-(def passcode -part-2-example-1)
+(def -part-2-example-2 "kglvqrro")
+(def -part-2-example-3 "ulqzkmiv")
+(def -part-2-passcode "yjjvjgan")
+(def passcode -part-2-passcode)
 
 (defn open? [ch]
   (boolean (#{\b \c \d \e \f} ch)))
@@ -135,7 +154,10 @@
 (defn stop-loc? [[path position]]
   (= position [3 3]))
 
-(defn detect-short-circuit? [positions-path]
+;;
+;; No problem with short circuiting b/c will be generating new directions each time.
+;;
+#_(defn detect-short-circuit? [positions-path]
   (let [
         ;_ (assert false positions-path)
         freqs (frequencies (first positions-path))
@@ -147,11 +169,11 @@
     (create-positions-path start-from directions)))
 
 (defn x []
-  (let [result (breadth-first-search 300
+  (let [result (breadth-first-search 1000
                                      started-path-pos
                                      (gen-paths passcode width height)
                                      stop-loc?
-                                     detect-short-circuit?)
+                                     true)
         res (:res result)]
     (if res
       (->> res first (apply str))
@@ -172,5 +194,5 @@
 
         :reached-end (second result)))))
 
-(defn x-2 []
+#_(defn x-2 []
   (detect-short-circuit? [((create-path [0 0]) [\D \R \R \U \L \D \U \D \D \D \U \R \R \D \U]) :sumfin]))
