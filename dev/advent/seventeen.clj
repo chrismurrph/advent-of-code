@@ -36,7 +36,9 @@
               (let [now-tested (into already-tested non-short-new-gens)]
                 (recur now-tested (into #{} (remove already-tested non-short-new-gens)) (inc times)
                        (or (seq can-get-theres) most-distant-candidates)))))
-          [:dead-end "Nowhere to go, not even back where came from" already-tested]))
+          (if short-circuit-detector-fn?
+            (assert false most-distant-candidates)
+            [:dead-end "Nowhere to go, not even back where came from" already-tested])))
       [:need-more-steps "Need give more steps then run again" already-tested])))
 
 (defn- md5 [s]
@@ -50,7 +52,7 @@
 (def -example-passcode "hijkl")
 (def -real-passcode "yjjvjgan")
 (def -part-2-example-1 "ihgpwlah")
-(def passcode -real-passcode)
+(def passcode -part-2-example-1)
 
 (defn open? [ch]
   (boolean (#{\b \c \d \e \f} ch)))
@@ -149,14 +151,14 @@
                                      started-path-pos
                                      (gen-paths passcode width height)
                                      stop-loc?
-                                     nil #_detect-short-circuit?)
+                                     detect-short-circuit?)
         res (:res result)]
     (if res
       (->> res first (apply str))
       (case (first result)
         :dead-end
         (let [
-              ;_ (println (last result))
+              _ (println result)
               longest (reduce (fn [acc ele]
                                 (let [size (count ele)]
                                   (if (> size (count acc))
