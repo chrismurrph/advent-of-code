@@ -54,38 +54,24 @@
 
 (defn present-turns [starting-eleves]
   (loop [left-vector []
-         right-list starting-eleves
-         times 0]
+         right-list starting-eleves]
     (let [
           [thief & tail] right-list
-          ;_ (println thief tail)
           victim (first tail)
           ]
       (if victim
         (let [num-presents-to-take (:num-presents victim)
-              _ (assert thief (str "How no thief when victim: " victim ", BAD <" right-list ">"))
-              _ (assert (number? num-presents-to-take) (str "strange: " victim))
               happy-thief (update thief :num-presents #(+ % num-presents-to-take))
-              ; Don't even need to do this
-              ;sad-victim (update victim :num-presents #(- % num-presents-to-take))
               ]
-          (recur (conj left-vector happy-thief) (drop 2 right-list) (inc times)))
-        (let [
-              ;_ (println "No victim:" left-vector right-list)
-              [one two] left-vector]
+          (recur (conj left-vector happy-thief) (drop 2 right-list)))
+        (let [[one two] left-vector]
           (if two
-            (let [
-                  ;_ (println "Maybe thief, but on left: " (seq left-vector))
-                  ]
-              (if (nil? thief)
-                (recur [] (seq left-vector) (inc times))
-                (recur [] (cons thief (seq left-vector)) (inc times))))
-            (let [
-                  ;_ (assert (= 1 (count left-vector)))
-                  ]
-              (if (empty? right-list)
-                one
-                (recur [] (concat right-list left-vector) (inc times))))))))
+            (if (nil? thief)
+              (recur [] (seq left-vector))
+              (recur [] (cons thief (seq left-vector))))
+            (if (empty? right-list)
+              one
+              (recur [] (concat right-list left-vector)))))))
     ))
 
 (def num-eleves 3017957)
