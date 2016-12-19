@@ -294,6 +294,11 @@
 
 (def state-score #(-> % second meta :score))
 
+;;
+;; All floors that have generators. All floors where chip is on different floor to its generator.
+;; These floors have vulnerable chips. So can't be same as a generator floor.
+;; i.e. No generators can be on a floor where there are chips whose generator is else-floor
+;;
 (def valid-floors?
   (memoize
     (fn [n]
@@ -301,52 +306,60 @@
             chips (set (keep first (filter #(apply not= %) n)))]
         (empty? (intersection gens chips))))))
 
-(def safe-elevator?
-  (memoize
-    (fn [positions]
-      (or (= 1 (count positions))
-          (every? odd? positions)
-          (every? even? positions)
-          (let [chip (some #(when (even? %) %) positions)]
-            ((set positions) (inc chip)))))))
+(def counter (atom 0))
+(defn true-until [counted]
+  (if (= counted @counter)
+    false
+    (do
+      (swap! counter inc)
+      true)))
+
+;;
+;; Elevator has 1 or 2 things in it.
+;;
+(defn safe-elevator? [positions]
+  (assert (true-until 1) (str "postiions: " (seq positions)))
+  (or (= 1 (count positions))
+      (every? odd? positions)
+      (every? even? positions)
+      (let [chip (some #(when (even? %) %) positions)]
+        ((set positions) (inc chip)))))
 
 (def finished-score 10000000)
 
 (defn finished? [n] (= #{[3 3]} (set n)))
 
 (def score
-  (memoize
-    (fn [n]
-      (if (finished? n)
-        finished-score
-        (* 10 (count (filter #(= 3 %) (flatten n))))))))
+  (fn [n]
+    (if (finished? n)
+      finished-score
+      (* 10 (count (filter #(= 3 %) (flatten n)))))))
 
 
 (def next-possible-states
-  (memoize
-    (fn [[flr pairings]]
-      (let [flattened (vec (flatten pairings))
-            lower-bound (reduce min flattened)
-            places (u/indexes-by #(= % flr) flattened)
-            positions' (->> (map list places)
-                            (concat (combo/combinations places 2))
-                            (filter safe-elevator?))
-            moves (for [positions positions'
-                        up-or-down [1 -1]
-                        :let [next-floor (+ flr up-or-down)]
-                        :when (<= lower-bound next-floor 3)]
-                    [next-floor
-                     (->> (reduce #(assoc %1 %2 next-floor) flattened positions)
-                          (partition 2)
-                          (map vec)
-                          sort)])]
-        (doall
-          (sequence
-            (comp
-              (filter (comp valid-floors? second))
-              (distinct-by second)
-              (map #(vary-meta % assoc :score (score (second %)))))
-            moves))))))
+  (fn [[flr pairings]]
+    (let [flattened (vec (flatten pairings))
+          lower-bound (reduce min flattened)
+          places (u/indexes-by #(= % flr) flattened)
+          positions' (->> (map list places)
+                          (concat (combo/combinations places 2))
+                          (filter safe-elevator?))
+          moves (for [positions positions'
+                      up-or-down [1 -1]
+                      :let [next-floor (+ flr up-or-down)]
+                      :when (<= lower-bound next-floor 3)]
+                  [next-floor
+                   (->> (reduce #(assoc %1 %2 next-floor) flattened positions)
+                        (partition 2)
+                        (map vec)
+                        sort)])]
+      (doall
+        (sequence
+          (comp
+            (filter (comp valid-floors? second))
+            (distinct-by second)
+            (map #(vary-meta % assoc :score (score (second %)))))
+          moves)))))
 
 ;; do one level at a time
 (defn breadth-first-level [ordered-state-set]
@@ -379,3 +392,14 @@
 
 (defn x-8 []
   (to-canonical start-state2))
+
+(def start-state {:pos 0
+                  :floors {0 #{1 -1}
+                           1 #{10 100 1000 10000}
+                           2 #{-10 -100 -1000 -10000}
+                           3 #{}}})
+
+;; part 1
+;; => 33
+(defn x-9 []
+  (breadth-first-search 40 start-state))

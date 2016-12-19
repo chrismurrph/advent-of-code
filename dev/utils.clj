@@ -2,6 +2,17 @@
   (:require [clojure.string :as str]
             [clojure.pprint :as pp]))
 
+;;
+;; Won't work in assert because of namespace issues, so copy into your own file until
+;; I become better at macros (or ask on SO)
+;;
+(def counter (atom 0))
+(defn true-until [counted]
+  (when (not= counted @counter)
+    (do
+      (swap! counter inc)
+      true)))
+
 (defn indexes-by [f coll]
   (sequence
     (comp

@@ -1,15 +1,6 @@
 (ns advent.seventeen
   (:import (java.security MessageDigest)))
 
-(def counter (atom 0))
-(def counted 20)
-(defn true-until-counted []
-  (if (= counted @counter)
-    false
-    (do
-      (swap! counter inc)
-      true)))
-
 (defn longest [past-visits]
   (let [
         lengths (mapv #(-> % first count) past-visits)
