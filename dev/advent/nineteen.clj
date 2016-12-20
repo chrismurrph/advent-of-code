@@ -55,10 +55,7 @@
 (defn present-turns [starting-eleves]
   (loop [left-vector []
          right-list starting-eleves]
-    (let [
-          [thief & tail] right-list
-          victim (first tail)
-          ]
+    (let [[thief & [victim]] right-list]
       (if victim
         (let [num-presents-to-take (:num-presents victim)
               happy-thief (update thief :num-presents #(+ % num-presents-to-take))
@@ -71,8 +68,7 @@
               (recur [] (cons thief (seq left-vector))))
             (if (empty? right-list)
               one
-              (recur [] (concat right-list left-vector)))))))
-    ))
+              (recur [] (concat right-list left-vector)))))))))
 
 (def num-eleves 3017957)
 
