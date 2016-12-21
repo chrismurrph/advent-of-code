@@ -58,33 +58,74 @@
 ;;
 (defn present-turns-fast [starting-eleves]
   (let [[left-starting right-starting] (split-left-right starting-eleves)]
+    ;(println left-starting right-starting)
     (loop [left-list left-starting
            right-list right-starting
            old-thieves []
+           skipped-victims []
            knock-outs #{}
            sequence-idx 0
            index 0]
-      (if (>= sequence-idx (count left-list))
-        (let [with-knock-outs-removed (remove knock-outs right-list)]
-          ;(assert false (str (seq with-knock-outs-removed) "," old-thieves))
-          (recur with-knock-outs-removed (seq old-thieves) [] #{} 0 (inc index))
-          )
-        (let [thief (nth left-list sequence-idx)
-              knock-out-idx (if (even? sequence-idx) sequence-idx (inc sequence-idx))]
-          (if (< knock-out-idx (count right-list))
-            (let [victim (nth right-list knock-out-idx)
-                  num-presents-to-take (:num-presents victim)
-                  _ (println "thief: " thief)
-                  _ (println "victim: " victim)
-                  happy-thief (update thief :num-presents #(+ % num-presents-to-take))]
-              (recur left-list right-list (conj old-thieves happy-thief) (conj knock-outs victim) (inc sequence-idx) (inc index)))
-            thief))))))
+      (when true #_(< index 20)
+        (if (and (> index 1) (and (empty? left-list) (or (nil? (second old-thieves)) (nil? (second skipped-victims)))))
+          ;;(u/assrt false (str (seq left-list) "," (seq right-list) "," old-thieves "," skipped-victims))
+          (if (= 1 (count right-list))
+            (let [others (concat old-thieves skipped-victims)
+                  _ (assert (= 1 (count others)) (str "others: " (count old-thieves) ", " (count skipped-victims)))
+                  _ (println (str "END: " (count left-list) "," (count right-list) "," (count old-thieves) "," (count skipped-victims)))
+                  last-victim (first others)
+                  num-presents-to-take (:num-presents last-victim)
+                  happiest-thief (update (first right-list) :num-presents #(+ % num-presents-to-take))
+                  ]
+              happiest-thief
+              ;(u/assrt false (str (seq left-list) "," (seq right-list) "," old-thieves "," skipped-victims))
+              )
+            (let [new-circle (concat skipped-victims left-list right-list old-thieves)
+                  [new-left new-right] (split-left-right new-circle)
+                  ;_ (println "new" new-left new-right)
+                  ]
+              (recur new-left new-right [] [] #{} 0 (inc index))))
+          (let [thief (first left-list)
+                _ (assert thief (str "No thief from <" (seq left-list) ">"))
+                ;knock-out-idx (if (even? sequence-idx) sequence-idx (inc sequence-idx))
+                drop-count (if (even? sequence-idx) 0 1)
+                ]
+            (let [victim (first (drop drop-count right-list))
+                  ;_ (assert victim (str "No victim from " (seq right-list)))
+                  ]
+              (if (nil? victim)
+                ;(assert false (str "BAD: " (seq left-list) "," (seq right-list) "," old-thieves "," skipped-victims))
+                (let [new-circle (concat skipped-victims left-list right-list old-thieves)
+                      [new-left new-right] (split-left-right new-circle)
+                      ;_ (println "new" new-left new-right)
+                      ]
+                  (recur new-left new-right [] [] #{} 0 (inc index)))
+                (let [num-presents-to-take (:num-presents victim)
+                      ;_ (println "thief:" thief)
+                      ;_ (println "victim:" victim)
+                      happy-thief (update thief :num-presents #(+ % num-presents-to-take))]
+                  (recur (drop 1 left-list)
+                         (drop (inc drop-count) right-list)
+                         (conj old-thieves happy-thief)
+                         (if (= 1 drop-count)
+                           (do
+                             ;(println "where is 4 (1 drop): " right-list)
+                             (conj skipped-victims (first right-list)))
+                           (do
+                             ;(println "where is 4 (0 drop): " right-list)
+                             skipped-victims))
+                         (conj knock-outs victim)
+                         (inc sequence-idx)
+                         (inc index)))))))))))
 
 (def test-num-eleves 5)
 (def num-eleves 3017957)
 
+;;
+;; Not working. To fix manually do 6 (and maybe 7) to check where automated answer goes wrong.
+;;
 (defn x []
-  (let [eleves (make-eleves test-num-eleves)
+  (let [eleves (make-eleves num-eleves)
         ;_ (println eleves)
         ]
     (present-turns-fast eleves)))
