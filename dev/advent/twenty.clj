@@ -41,16 +41,57 @@
       {:res head :left-overs []}
       tail)))
 
+(defn big-merge [ips]
+  (loop [ips ips
+         results []]
+    (let [{:keys [res left-overs]} (merge-into-rest ips)]
+      (if (empty? left-overs)
+        results
+        (recur left-overs (conj results res))))))
+
+(defn new-ips-count [lower-range upper-range]
+  (dec (- (:lower upper-range) (:upper lower-range))))
+
+(def max-ip 4294967295)
+
 (defn x []
   (let [input (slurp "./advent/twenty.txt")
         raw-series (line-seq (BufferedReader. (StringReader. input)))
         series (map make-obj raw-series)
         sorted (sort-by :lower series)
-        examples (take 20 sorted)
+        ;;examples (take 20 sorted)
         ;_ (println examples)
         ;in-tuples (partition 2 examples)
         ;_ (println in-tuples)
         ;res (map #(apply intersecting-ranges? %) in-tuples)
-        res (merge-into-rest examples)
+        ip-ranges (sort-by :lower (big-merge sorted))
+        first-ip (first ip-ranges)
+        final-ip (last ip-ranges)
+        _ (println "first:" first-ip "last:" final-ip)
+        _ (println "last 2:" (drop (- (count ip-ranges) 2) (sort-by :upper (big-merge sorted))))
+        parted (partition 2 1 ip-ranges)
+        res (reduce
+              (fn [acc ele]
+                (let [[left right] ele]
+                  (+ acc (new-ips-count left right))))
+              0
+              parted)
+        _ (println "res: " res)
+        ;; x-2 shows don't need to worry about far-end, as last ip goes right to the end
+        ;; But still (:upper final-ip) s/be returning max-ip
+        ;; I strongly suspect problem is that there's a bug dealing with last one.
+        ;;far-end (- max-ip (:upper final-ip))
+        ;;_ (println "far end: " far-end)
+        num-available (+ res 1)
         ]
-    res))
+    num-available))
+
+(defn x-1 []
+  (new-ips-count {:lower 0, :upper 31053879} {:lower 31053881, :upper 50881439}))
+
+(defn x-2 []
+  (let [input (slurp "./advent/twenty.txt")
+        raw-series (line-seq (BufferedReader. (StringReader. input)))
+        series (map make-obj raw-series)
+        uppers (map :upper series)]
+    (apply max uppers)))
