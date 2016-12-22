@@ -7,18 +7,12 @@
   (let [[lower upper] (str/split input #"-")]
     {:lower (u/string->int lower) :upper (u/string->int upper)}))
 
-;; would be better if did the diff to -1 being okay
 (defn lower-abutting [int1 int2]
-  (let [diff (- int2 int1)
-        ;_ (println "lower diff" diff)
-        ]
+  (let [diff (- int2 int1)]
     (>= diff -1)))
 
-;; would be better if did the diff to -1 being okay
 (defn upper-abutting [int1 int2]
-  (let [diff (- int1 int2)
-        ;_ (println "upper diff" diff)
-        ]
+  (let [diff (- int1 int2)]
     (>= diff -1)))
 
 (defn intersecting-ranges? [range1 range2]
@@ -46,12 +40,15 @@
          results []]
     (let [{:keys [res left-overs]} (merge-into-rest ips)]
       (if (empty? left-overs)
-        results
+        (conj results res)
         (recur left-overs (conj results res))))))
 
 (defn new-ips-count [lower-range upper-range]
   (dec (- (:lower upper-range) (:upper lower-range))))
 
+;;
+;; Maximum IP address possible
+;;
 (def max-ip 4294967295)
 
 (defn x []
@@ -67,6 +64,7 @@
         ip-ranges (sort-by :lower (big-merge sorted))
         first-ip (first ip-ranges)
         final-ip (last ip-ranges)
+        _ (assert (= (:upper final-ip) max-ip))
         _ (println "first:" first-ip "last:" final-ip)
         _ (println "last 2:" (drop (- (count ip-ranges) 2) (sort-by :upper (big-merge sorted))))
         parted (partition 2 1 ip-ranges)
@@ -76,15 +74,8 @@
                   (+ acc (new-ips-count left right))))
               0
               parted)
-        _ (println "res: " res)
-        ;; x-2 shows don't need to worry about far-end, as last ip goes right to the end
-        ;; But still (:upper final-ip) s/be returning max-ip
-        ;; I strongly suspect problem is that there's a bug dealing with last one.
-        ;;far-end (- max-ip (:upper final-ip))
-        ;;_ (println "far end: " far-end)
-        num-available (+ res 1)
         ]
-    num-available))
+    res))
 
 (defn x-1 []
   (new-ips-count {:lower 0, :upper 31053879} {:lower 31053881, :upper 50881439}))
