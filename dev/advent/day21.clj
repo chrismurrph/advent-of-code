@@ -72,8 +72,8 @@
 (defn un-scramble-apply-instr [s instr]
   (let [s (vec s)]
     (condp = (take 2 instr)
-      '[swap position]     (apply swap-position     s (reverse (get-numbers instr)))
-      '[swap letter]       (apply swap-letter       s (reverse (get-letters instr)))
+      '[swap position]     (apply swap-position     s (get-numbers instr))
+      '[swap letter]       (apply swap-letter       s (get-letters instr))
       '[move position]     (apply move-position     s (reverse (get-numbers instr)))
       '[rotate left]       (apply rotate-right      s (get-numbers instr))
       '[rotate right]      (apply rotate-left       s (get-numbers instr))
@@ -86,3 +86,7 @@
 ;; part 2
 #_(apply str (un-scramble "fbgdceah" instr-data))
 ;; => "bcfaegdh"
+
+;; "afhdbegc" is correct answer we want to keep. swaps don't need reversed
+(defn x-2 []
+  (apply str (un-scramble "fbgdceah" instr-data)))

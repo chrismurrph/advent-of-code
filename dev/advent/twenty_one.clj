@@ -98,7 +98,7 @@
         use-y (first y)]
     (apply str (replace {use-x use-y use-y use-x} s))))
 
-(defn swap-position [s -y -x]
+(defn my-swap-position [s -y -x]
   (let [
         x-use (min -x -y)
         y-use (max -x -y)
@@ -139,7 +139,7 @@
 (def move-position #_move bruce-move-position)
 (def rotate-right #_right-rotate bruce-rotate-right #_(fn [_ _] (assert false)))
 (def rotate-left #_left-rotate bruce-rotate-left)
-(def swap-position #_swap-position bruce-swap-position #_(fn [_ _ _] (assert false)))
+(def swap-position my-swap-position #_bruce-swap-position #_(fn [_ _ _] (assert false)))
 (def swap-letter fixed-swap-letter #_bruce-swap-letter #_(fn [_ _ _] (assert false)))
 
 (defn to-hiccup [s]
@@ -160,9 +160,9 @@
     (mapcat identity (map next instructions))))
 
 ;; Mine are string based, so needed this when starting to use Bruce's functions
-(def trans (partial apply (comp u/probe-on str)))
+(def trans (partial apply (comp #_u/probe-on str)))
 
-(defn execute-cmd [cmd acc arg-1 arg-2]
+(defn execute-cmd-scramble [cmd acc arg-1 arg-2]
   (case cmd
     :move (move-position acc arg-1 arg-2)
     :rotate-based (rotate-based acc arg-1)
@@ -176,15 +176,38 @@
     :swap-position (swap-position acc arg-1 arg-2)
     :reverse (reverse-positions acc arg-1 arg-2)))
 
-(defn run-instructions [instructions]
+;; not invertable so search (from Bruce)
+(defn inv-rotate-based [s l]
+  (->> (map #(rotate-left s %) (range (count s)))
+       (filter #(= (rotate-based % l) s))
+       first))
+
+;;
+;; This not finished yet. Skipped ahead to the next day. Will come back to this in Ordinary Time.
+;;
+(defn execute-cmd-unscramble [cmd acc arg-1 arg-2]
+  (case cmd
+    :move (move-position (str/reverse acc) arg-1 arg-2)
+    :rotate-based (inv-rotate-based acc arg-1)
+    :rotate-direction (cond
+                        (= :right arg-1)
+                        (rotate-left acc arg-2)
+                        (= :left arg-1)
+                        (rotate-right acc arg-2)
+                        )
+    :swap-letter (swap-letter acc arg-1 arg-2)
+    :swap-position (swap-position (str/reverse acc) arg-1 arg-2)
+    :reverse (reverse-positions acc arg-1 arg-2)))
+
+(defn run-instructions [input instructions executor]
   (let [res (reduce
               (fn [acc ele]
                 (let [
                       ;_ (println ele)
                       [cmd & [arg-1 arg-2]] ele
-                      cmd-res (execute-cmd cmd acc arg-1 arg-2)]
+                      cmd-res (executor cmd acc arg-1 arg-2)]
                   (trans cmd-res)))
-              "abcdefgh"
+              input
               instructions)]
     (apply str res)))
 
@@ -219,7 +242,18 @@
         in (line-seq (BufferedReader. (StringReader. raw-input)))
         instructions (retrieve-instructions in)]
     ;(pp/pprint instructions)
-    (run-instructions instructions)
+    (run-instructions "abcdefgh" instructions execute-cmd-scramble)
+    ))
+
+;; "afhdbegc" is correct answer
+(defn part-2 []
+  (let [
+        raw-input (slurp "./advent/twenty_one.txt")
+        ;raw-input steps
+        in (line-seq (BufferedReader. (StringReader. raw-input)))
+        instructions (retrieve-instructions in)]
+    ;(pp/pprint instructions)
+    (run-instructions "fbgdceah" (reverse instructions) execute-cmd-unscramble)
     ))
 
 (defn x-2 []
