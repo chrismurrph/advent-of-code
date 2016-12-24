@@ -133,8 +133,50 @@
         out-of-bounds-fn (fn [[x y]] (or (neg? x) (neg? y) (>= x width) (>= y height)))
         new-places (remove out-of-bounds-fn new-possible-places)
         not-good-places (into #{} (conj immovables current-place))
+        good-places (remove not-good-places new-places)
+        good-moves (map (fn [to-place] [current-place to-place]) good-places)
         ]
-    (remove not-good-places new-places)))
+    good-moves))
+
+(defn replace-node-in-grid [grid new-node [x y]]
+  (assert (vector? grid))
+  (assert (vector? (first grid)))
+  (assoc-in grid [y x] new-node)
+  )
+
+(defn node-size [node]
+  (+ (:used node) (:avail node)))
+
+;;
+;; move is from one coordinate to another. We move all of what is :used in the-from-node to the-to-node,
+;; thus increasing the to node's used. We must also adjust :avail up in the from, and down in the
+;; to node. If avail in to node becomes -ive then need to crash.
+;; This is moving the data, and leaving the from node with lots of free space.
+;; In theory we don't need to do this, but seems less work to work with the orig data structures
+;;
+(defn move-grid [grid [[from-x from-y] [to-x to-y]]]
+  (let [_ (assert (or (not= from-x to-x) (not= from-y to-y)))
+        orig-from-node (get-in grid [from-y from-x])
+        orig-to-node (get-in grid [to-y to-x])
+        transfer-amount (:used orig-from-node)
+        _ (assert (pos? transfer-amount) (str "Nothing to transfer: " transfer-amount))
+        ;; new to node is going to have more used and less avail
+        new-to-node (assoc orig-to-node :used (+ transfer-amount (:used orig-to-node))
+                                        :avail (- (:avail orig-to-node) transfer-amount))
+        _ (assert (not= orig-to-node new-to-node) (str orig-to-node "," new-to-node))
+        ;; new from node is going to have less used and more avail
+        new-from-node (assoc orig-from-node :used 0
+                                            :avail (+ (:avail orig-from-node) transfer-amount))
+        _ (assert (not= orig-from-node new-from-node))
+        _ (assert (#(-> % neg? not) (:avail new-to-node)) (str "Can't leave to node with less than nothing available"))
+        new-grid (-> grid
+                     (assoc-in [from-y from-x] new-from-node)
+                     (assoc-in [to-y to-x] new-to-node))
+        ]
+    new-grid))
+
+(defn grid->grids [moves grid]
+  )
 
 ;;
 ;; one grid in, many out
@@ -151,8 +193,9 @@
         move-possibilities (for [carrier carriers
                                  :let [steps (steps-away width height immovables carrier)]]
                              steps)
+        moves (mapcat identity move-possibilities)
         ]
-    (mapcat identity move-possibilities)))
+    moves))
 
 (def row-width 3)
 (def column-height 3)
@@ -176,3 +219,16 @@
 (defn x-1 []
   (let [res (steps-away row-width column-height [[1 1]] {:grid-id "/dev/grid/node-x1-y1", :x 1, :y 2, :used 0, :avail 8})]
     res))
+
+(defn x-2 []
+  (let [raw-input (slurp "./advent/twenty_two_example.txt")
+        ;raw-input steps
+        in (line-seq (BufferedReader. (StringReader. raw-input)))
+        raw-df-lines (drop 2 in)
+        objects (mapv make-obj raw-df-lines)
+        grid (gridify row-width objects)
+        ;middle-node (-> grid second second)
+        res (move-grid grid [[0 0] [1 1]])
+        _ (assert (not= grid res))]
+    (pp/pprint grid)
+    (pp/pprint res)))
