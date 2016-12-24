@@ -98,26 +98,19 @@
           (let [got-there? (first (filter destination-state? newly-generated))]
             (if got-there?
               (do
-                (println (str "Got there with: <" got-there? ">"))
-                {:steps times :res got-there?})
+                ;(println (str "Got there with: <" got-there? ">"))
+                {:steps (inc times) :res got-there?})
               (let [now-tested (into already-tested newly-generated)]
                 (recur now-tested (into #{} (remove already-tested newly-generated)) (inc times) most-distant-candidates))))
           [:dead-end "Nowhere to go, not even back where came from" already-tested]))
       [:need-more-steps "Need give more steps then run again" already-tested])))
-
-(def start-grid [[\. \. \G]
-                 [\. \_ \.]
-                 [\# \. \.]])
-
-(defn end-grid? [grid]
-  (= (-> grid first second) \G))
 
 ;;
 ;; [x y] is the target. If there are two or more ways of getting closer we choose them all.
 ;; We filter out any differences that are 0, or land you at an immovable.
 ;; immovables s/be a vector of x y vectors.
 ;;
-(defn steps-away [width height immovables node]
+(defn swap-steps [width height immovables node]
   (let [
         ;; diff gives the movement required to get the node nearer to the target. For instance
         ;; if x-diff is positive then required movement will be to the right
@@ -134,7 +127,7 @@
         new-places (remove out-of-bounds-fn new-possible-places)
         not-good-places (into #{} (conj immovables current-place))
         good-places (remove not-good-places new-places)
-        good-moves (map (fn [to-place] [current-place to-place]) good-places)
+        good-moves (map (fn [to-place] [to-place current-place]) good-places)
         ]
     good-moves))
 
@@ -168,7 +161,7 @@
         new-from-node (assoc orig-from-node :used 0
                                             :avail (+ (:avail orig-from-node) transfer-amount))
         _ (assert (not= orig-from-node new-from-node))
-        _ (assert (#(-> % neg? not) (:avail new-to-node)) (str "Can't leave to node with less than nothing available"))
+        _ (assert (#(-> % neg? not) (:avail new-to-node)) (str "Can't leave to node with less than nothing available: " new-to-node))
         new-grid (-> grid
                      (assoc-in [from-y from-x] new-from-node)
                      (assoc-in [to-y to-x] new-to-node))
@@ -176,9 +169,14 @@
     new-grid))
 
 (defn grid->grids [moves grid]
-  (for [move moves
+  #_(for [move moves
         :let [now-moved (move-grid grid move)]]
-    now-moved))
+    now-moved)
+    (let [_ (println "count moves " (count moves))
+          f (partial move-grid grid)
+          res (map f moves)]
+      res)
+  )
 
 ;;
 ;; one grid in, many out
@@ -186,27 +184,28 @@
 ;; bfs is brute force, generating many changes for each that is accomodating, and there are many
 ;; that are accomodating.
 ;;
-(defn gen-possibilities [width height grid]
-  (let [all-flat (flatten grid)
-        top-right (-> grid first last)
-        spare-space-fn (partial spare-space-in-second top-right)
-        carriers (filter spare-space-fn all-flat)
-        _ (println "carriers: " carriers)
-        immovables (filter too-big-to-move? all-flat)
-        _ (println "immovables: " immovables)
-        move-possibilities (for [carrier carriers
-                                 :let [steps (steps-away width height immovables carrier)]]
-                             steps)
-        moves (mapcat identity move-possibilities)
-        _ (println "generated moves: " moves)
-        res (grid->grids moves grid)
-        ]
-    res))
+(defn gen-possibilities [width height]
+  (fn [grid]
+    (let [all-flat (flatten grid)
+          top-right (-> grid first last)
+          spare-space-fn (partial spare-space-in-second top-right)
+          carriers (filter spare-space-fn all-flat)
+          _ (println "carriers: " carriers)
+          immovables (filter too-big-to-move? all-flat)
+          _ (println "immovables: " immovables)
+          move-possibilities (for [carrier carriers
+                                   :let [steps (swap-steps width height immovables carrier)]]
+                               steps)
+          moves (mapcat identity move-possibilities)
+          _ (println "generated moves: " moves)
+          res (grid->grids moves grid)
+          ]
+      res)))
 
 (def row-width 3)
 (def column-height 3)
 
-(defn x []
+(defn x-3 []
   (let [raw-input (slurp "./advent/twenty_two_example.txt")
         ;raw-input steps
         in (line-seq (BufferedReader. (StringReader. raw-input)))
@@ -218,23 +217,32 @@
         ;all-flat (flatten grid)
         ;carriers (filter spare-space-fn all-flat)
         ;immovables (filter too-big-to-move? all-flat)
-        possibilities (gen-possibilities row-width column-height grid)
+        possibilities ((gen-possibilities row-width column-height) grid)
         ]
-    possibilities))
+    (first possibilities)))
 
 (defn x-1 []
-  (let [res (steps-away row-width column-height [[1 1]] {:grid-id "/dev/grid/node-x1-y1", :x 1, :y 2, :used 0, :avail 8})]
+  (let [res (swap-steps row-width column-height [[1 1]] {:grid-id "/dev/grid/node-x1-y1", :x 1, :y 2, :used 0, :avail 8})]
     res))
 
-(defn x-2 []
+(defn x []
   (let [raw-input (slurp "./advent/twenty_two_example.txt")
         ;raw-input steps
         in (line-seq (BufferedReader. (StringReader. raw-input)))
         raw-df-lines (drop 2 in)
         objects (mapv make-obj raw-df-lines)
         grid (gridify row-width objects)
-        ;middle-node (-> grid second second)
-        res (move-grid grid [[0 0] [1 1]])
-        _ (assert (not= grid res))]
-    (pp/pprint grid)
+        _ (pp/pprint (str "GOAL: " (get-in grid [2 0])))
+        _ (pp/pprint (str "space?: " (get-in grid [1 1])))
+        space-required (:used (get-in grid [2 0]))
+        _ (println "space-required:" space-required)
+        res (breadth-first-search 10 grid (gen-possibilities row-width column-height) (fn [grid] (>= space-required (:avail (get-in grid [1 0])))))
+        ]
     (pp/pprint res)))
+
+(def start-grid [[\. \. \G]
+                 [\. \_ \.]
+                 [\# \. \.]])
+
+(defn end-grid? [grid]
+  (= (-> grid first second) \G))
