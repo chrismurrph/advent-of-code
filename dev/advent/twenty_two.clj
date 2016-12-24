@@ -159,7 +159,7 @@
         orig-from-node (get-in grid [from-y from-x])
         orig-to-node (get-in grid [to-y to-x])
         transfer-amount (:used orig-from-node)
-        _ (assert (pos? transfer-amount) (str "Nothing to transfer: " transfer-amount))
+        _ (assert (pos? transfer-amount) (str "Nothing to transfer: " transfer-amount " from " orig-from-node))
         ;; new to node is going to have more used and less avail
         new-to-node (assoc orig-to-node :used (+ transfer-amount (:used orig-to-node))
                                         :avail (- (:avail orig-to-node) transfer-amount))
@@ -176,7 +176,9 @@
     new-grid))
 
 (defn grid->grids [moves grid]
-  )
+  (for [move moves
+        :let [now-moved (move-grid grid move)]]
+    now-moved))
 
 ;;
 ;; one grid in, many out
@@ -189,13 +191,17 @@
         top-right (-> grid first last)
         spare-space-fn (partial spare-space-in-second top-right)
         carriers (filter spare-space-fn all-flat)
+        _ (println "carriers: " carriers)
         immovables (filter too-big-to-move? all-flat)
+        _ (println "immovables: " immovables)
         move-possibilities (for [carrier carriers
                                  :let [steps (steps-away width height immovables carrier)]]
                              steps)
         moves (mapcat identity move-possibilities)
+        _ (println "generated moves: " moves)
+        res (grid->grids moves grid)
         ]
-    moves))
+    res))
 
 (def row-width 3)
 (def column-height 3)
