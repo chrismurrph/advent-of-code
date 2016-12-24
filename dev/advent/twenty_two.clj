@@ -106,7 +106,6 @@
       [:need-more-steps "Need give more steps then run again" already-tested])))
 
 ;;
-;; [x y] is the target. If there are two or more ways of getting closer we choose them all.
 ;; We filter out any differences that are 0, or land you at an immovable.
 ;; immovables s/be a vector of x y vectors.
 ;;
@@ -140,6 +139,16 @@
 (defn node-size [node]
   (+ (:used node) (:avail node)))
 
+(defn get-grid [grid x y]
+  (get-in grid [y x]))
+
+;(defn swap-nodes [grid [from-x from-y] [to-x to-y]]
+;  (let [from-node (get-grid grid from-x from-y)
+;        to-node (get-grid grid to-x to-y)]
+;    (-> grid
+;        (assoc-in [from-y from-x] to-node)
+;        (assoc-in [to-y to-x] from-node))))
+
 ;;
 ;; move is from one coordinate to another. We move all of what is :used in the-from-node to the-to-node,
 ;; thus increasing the to node's used. We must also adjust :avail up in the from, and down in the
@@ -149,8 +158,10 @@
 ;;
 (defn move-grid [grid [[from-x from-y] [to-x to-y]]]
   (let [_ (assert (or (not= from-x to-x) (not= from-y to-y)))
-        orig-from-node (get-in grid [from-y from-x])
-        orig-to-node (get-in grid [to-y to-x])
+        orig-from-node (get-grid grid from-x from-y)
+        _ (assert orig-from-node (str "No node found at " from-x ", " from-y " in " grid))
+        orig-to-node (get-grid grid to-x to-y)
+        _ (assert orig-to-node)
         transfer-amount (:used orig-from-node)
         _ (assert (pos? transfer-amount) (str "Nothing to transfer: " transfer-amount " from " orig-from-node))
         ;; new to node is going to have more used and less avail
@@ -232,13 +243,18 @@
         raw-df-lines (drop 2 in)
         objects (mapv make-obj raw-df-lines)
         grid (gridify row-width objects)
-        _ (pp/pprint (str "GOAL: " (get-in grid [2 0])))
-        _ (pp/pprint (str "space?: " (get-in grid [1 1])))
-        space-required (:used (get-in grid [2 0]))
+        _ (pp/pprint (str "GOAL: " (get-grid grid 2 0)))
+        _ (pp/pprint (str "space?: " (get-grid grid 1 1)))
+        space-required (:used (get-grid grid 2 0))
         _ (println "space-required:" space-required)
-        res (breadth-first-search 10 grid (gen-possibilities row-width column-height) (fn [grid] (>= space-required (:avail (get-in grid [1 0])))))
+        res (breadth-first-search 10 grid (gen-possibilities row-width column-height) (fn [grid] (>= (:avail (get-grid grid 1 0)) space-required)))
+        ;_ (println "first count:" (:steps res))
+        new-grid (move-grid (:res res) [[2 0] [1 0]])
+        ;res-res (breadth-first-search 10 (:res res) (gen-possibilities row-width column-height) (fn [grid] (>= (:avail (get-grid grid 0 0)) space-required)))
+        ;_ (println "second count:" (:steps res-res))
         ]
-    (pp/pprint res)))
+    (pp/pprint res)
+    (pp/pprint new-grid)))
 
 (def start-grid [[\. \. \G]
                  [\. \_ \.]
