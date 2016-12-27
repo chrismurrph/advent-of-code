@@ -85,17 +85,18 @@
 (defn breadth-first-search [max-steps
                             starting-grid
                             generate-possibilities
-                            destination-state?]
+                            destination-state-fn?
+                            debug?]
   (loop [already-tested #{starting-grid}
          last-round #{starting-grid}
          times 0
          most-distant-candidates []]
     (assert (set? already-tested))
     (if (< times max-steps)
-      (let [_ (println "steps done:" times "visited:" (count already-tested))
+      (let [_ (when debug? (println "steps done:" times "visited:" (count already-tested)))
             newly-generated (mapcat generate-possibilities last-round)]
         (if (seq newly-generated)
-          (let [got-there? (first (filter destination-state? newly-generated))]
+          (let [got-there? (first (filter destination-state-fn? newly-generated))]
             (if got-there?
               (do
                 ;(println (str "Got there with: <" got-there? ">"))
@@ -151,12 +152,12 @@
 
 ;;
 ;; move is from one coordinate to another. We move all of what is :used in the-from-node to the-to-node,
-;; thus increasing the to node's used. We must also adjust :avail up in the from, and down in the
-;; to node. If avail in to node becomes -ive then need to crash.
-;; This is moving the data, and leaving the from node with lots of free space.
-;; In theory we don't need to do this, but seems less work to work with the orig data structures
+;; thus increasing the-to-node :used. We must also adjust :avail up in the-from-node, and down in the-to-node.
+;; If avail in the-to-node becomes -ive then need to crash.
+;; This is moving the data, and leaving the-from-node with lots of free space.
+;; In theory we don't need the actual numbers, but it seems less work to work with the orig data structures.
 ;;
-(defn move-grid [grid [[from-x from-y] [to-x to-y]]]
+(defn move-node [grid [[from-x from-y] [to-x to-y]]]
   (let [_ (assert (or (not= from-x to-x) (not= from-y to-y)))
         orig-from-node (get-grid grid from-x from-y)
         _ (assert orig-from-node (str "No node found at " from-x ", " from-y " in " grid))
@@ -172,7 +173,8 @@
         new-from-node (assoc orig-from-node :used 0
                                             :avail (+ (:avail orig-from-node) transfer-amount))
         _ (assert (not= orig-from-node new-from-node))
-        _ (assert (#(-> % neg? not) (:avail new-to-node)) (str "Can't leave to node with less than nothing available: " new-to-node))
+        _ (assert (#(-> % neg? not) (:avail new-to-node))
+                  (str "Can't leave to node with less than nothing available: " new-to-node " when going: " [from-x from-y] " to " [to-x to-y]))
         new-grid (-> grid
                      (assoc-in [from-y from-x] new-from-node)
                      (assoc-in [to-y to-x] new-to-node))
@@ -181,10 +183,10 @@
 
 (defn grid->grids [moves grid]
   #_(for [move moves
-        :let [now-moved (move-grid grid move)]]
+        :let [now-moved (move-node grid move)]]
     now-moved)
     (let [_ (println "count moves " (count moves))
-          f (partial move-grid grid)
+          f (partial move-node grid)
           res (map f moves)]
       res)
   )
@@ -236,25 +238,41 @@
   (let [res (swap-steps row-width column-height [[1 1]] {:grid-id "/dev/grid/node-x1-y1", :x 1, :y 2, :used 0, :avail 8})]
     res))
 
+(defn diff [grid-1 grid-2]
+  (let [flat-1 (flatten grid-1)
+        flat-2 (flatten grid-2)]
+    (filter (fn [[node-1 node-2]] (not= node-1 node-2)) (map vector flat-1 flat-2))))
+
 (defn x []
   (let [raw-input (slurp "./advent/twenty_two_example.txt")
         ;raw-input steps
         in (line-seq (BufferedReader. (StringReader. raw-input)))
         raw-df-lines (drop 2 in)
         objects (mapv make-obj raw-df-lines)
-        grid (gridify row-width objects)
-        _ (pp/pprint (str "GOAL: " (get-grid grid 2 0)))
-        _ (pp/pprint (str "space?: " (get-grid grid 1 1)))
-        space-required (:used (get-grid grid 2 0))
+        grid-1 (gridify row-width objects)
+        _ (pp/pprint (str "GOAL: " (get-grid grid-1 2 0)))
+        _ (pp/pprint (str "space?: " (get-grid grid-1 1 1)))
+        ;;
+        ;; What's :used at the top right is what we need to move
+        ;;
+        space-required (:used (get-grid grid-1 2 0))
         _ (println "space-required:" space-required)
-        res (breadth-first-search 10 grid (gen-possibilities row-width column-height) (fn [grid] (>= (:avail (get-grid grid 1 0)) space-required)))
-        ;_ (println "first count:" (:steps res))
-        new-grid (move-grid (:res res) [[2 0] [1 0]])
-        ;res-res (breadth-first-search 10 (:res res) (gen-possibilities row-width column-height) (fn [grid] (>= (:avail (get-grid grid 0 0)) space-required)))
-        ;_ (println "second count:" (:steps res-res))
+        ;;
+        ;; Create a grid where the node just to the left of top right node has enough space
+        ;;
+        grid-2 (:res (breadth-first-search 10 grid-1 (gen-possibilities row-width column-height) (fn [grd] (>= (:avail (get-grid grd 1 0)) space-required)) false))
+        ;;
+        ;; simple swap so data from top right [2 0] is now at [1 0] (one to left)
+        ;;
+        grid-3 (move-node grid-2 [[2 0] [1 0]])
+        ;;
+        ;; clear a space so destination [0 0] is clear for some of the data (space-required) we now have at [1 0].  This is supposed to take 4 steps.
+        ;;
+        {:keys [res steps] :as grid-4} (breadth-first-search 10 grid-3 (gen-possibilities row-width column-height) (fn [grd] (>= (:avail (get-grid grd 0 0)) space-required)) true)
+        ;;_ (println "count s/be 4:" steps)
         ]
-    (pp/pprint res)
-    (pp/pprint new-grid)))
+    ;(pp/pprint grid-1)
+    (pp/pprint (diff grid-3 grid-4))))
 
 (def start-grid [[\. \. \G]
                  [\. \_ \.]
