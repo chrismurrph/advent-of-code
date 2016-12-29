@@ -89,7 +89,7 @@
     {:data      data
      :g         (top-right-coord data)
      :last-move [(first capable-mover-node)]
-     :last-few-moves []}))
+     :last-few-move []}))
 
 ;; this is subtle: a preference for up and to the left is helpful
 ;; as it provides the very last disambiguation between = score moves
