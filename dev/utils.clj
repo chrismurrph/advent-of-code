@@ -113,6 +113,9 @@
       (assert false (str "Cannot parse as an int: <" s ">"))
       nil)))
 
+(def to-int #(Integer/parseInt %))
+(def to-ints (partial map to-int))
+
 ;(defn int-between [s1 s2 s]
 ;  (string->int (subs s (count s1) (count s2))))
 

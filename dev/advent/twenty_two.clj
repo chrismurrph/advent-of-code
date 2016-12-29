@@ -52,6 +52,11 @@
         b-avail (:avail node-b)]
     (>= b-avail a-used)))
 
+(defn spare-space? [space-required]
+  (fn [node]
+    (let [avail (:avail node)]
+      (>= avail space-required))))
+
 (defn too-big-to-move? [node]
   (>= (:used node) 28))
 
@@ -197,20 +202,20 @@
 ;; bfs is brute force, generating many changes for each that is accomodating, and there are many
 ;; that are accomodating.
 ;;
-(defn gen-possibilities [width height]
+(defn gen-possibilities [width height spare-space-fn debug?]
   (fn [grid]
     (let [all-flat (flatten grid)
-          top-right (-> grid first last)
-          spare-space-fn (partial spare-space-in-second top-right)
+          ;top-right (-> grid first last)
+          ;spare-space-fn (partial spare-space-in-second top-right)
           carriers (filter spare-space-fn all-flat)
-          _ (println "carriers: " carriers)
+          _ (when debug? (println "carriers: " carriers))
           immovables (filter too-big-to-move? all-flat)
-          _ (println "immovables: " immovables)
+          _ (when debug? (println "immovables: " immovables))
           move-possibilities (for [carrier carriers
                                    :let [steps (swap-steps width height immovables carrier)]]
                                steps)
           moves (mapcat identity move-possibilities)
-          _ (println "generated moves: " moves)
+          _ (when debug? (println "generated moves: " moves))
           res (grid->grids moves grid)
           ]
       res)))
@@ -225,12 +230,12 @@
         raw-df-lines (drop 2 in)
         objects (mapv make-obj raw-df-lines)
         grid (gridify row-width objects)
-        ;top-right (-> grid first last)
-        ;spare-space-fn (partial spare-space-in-second top-right)
+        top-right (-> grid first last)
+        spare-space-fn (spare-space? (:used top-right))
         ;all-flat (flatten grid)
         ;carriers (filter spare-space-fn all-flat)
         ;immovables (filter too-big-to-move? all-flat)
-        possibilities ((gen-possibilities row-width column-height) grid)
+        possibilities ((gen-possibilities row-width column-height spare-space-fn false) grid)
         ]
     (first possibilities)))
 
@@ -251,16 +256,17 @@
         objects (mapv make-obj raw-df-lines)
         grid-1 (gridify row-width objects)
         _ (pp/pprint (str "GOAL: " (get-grid grid-1 2 0)))
-        _ (pp/pprint (str "space?: " (get-grid grid-1 1 1)))
+        _ (pp/pprint (str "space at spacious spot: " (get-grid grid-1 1 1)))
         ;;
         ;; What's :used at the top right is what we need to move
         ;;
         space-required (:used (get-grid grid-1 2 0))
         _ (println "space-required:" space-required)
+        spare-space-fn (spare-space? space-required)
         ;;
         ;; Create a grid where the node just to the left of top right node has enough space
         ;;
-        grid-2 (:res (breadth-first-search 10 grid-1 (gen-possibilities row-width column-height) (fn [grd] (>= (:avail (get-grid grd 1 0)) space-required)) false))
+        grid-2 (:res (breadth-first-search 30 grid-1 (gen-possibilities row-width column-height spare-space-fn false) (fn [grd] (>= (:avail (get-grid grd 1 0)) space-required)) false))
         ;;
         ;; simple swap so data from top right [2 0] is now at [1 0] (one to left)
         ;;
@@ -268,7 +274,7 @@
         ;;
         ;; clear a space so destination [0 0] is clear for some of the data (space-required) we now have at [1 0].  This is supposed to take 4 steps.
         ;;
-        {:keys [res steps] :as grid-4} (breadth-first-search 10 grid-3 (gen-possibilities row-width column-height) (fn [grd] (>= (:avail (get-grid grd 0 0)) space-required)) true)
+        {:keys [res steps] :as grid-4} (breadth-first-search 30 grid-3 (gen-possibilities row-width column-height spare-space-fn true) (fn [grd] (>= (:avail (get-grid grd 0 0)) space-required)) true)
         ;;_ (println "count s/be 4:" steps)
         ]
     ;(pp/pprint grid-1)
