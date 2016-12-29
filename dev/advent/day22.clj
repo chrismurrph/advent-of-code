@@ -73,7 +73,7 @@
 
 (def required-to-move (get-required-to-move data))
 
-(defn capable [required-to-move]
+(defn capable! [required-to-move]
   (fn [data]
     (let [availables (into (sorted-map) (map (fn [[k v]] [k (available v)]) data))
           capable-movers (filter (fn [[_ v]] (>= v required-to-move)) availables)
@@ -81,15 +81,16 @@
           _ (assert (nil? tail) (str "Not just " capable-mover ", but also: " (seq capable-movers)))]
       capable-mover)))
 
-(def keep-moves-count 150)
+;;(def keep-moves-count 150)
 (defn make-initial-2 [data]
-  (let [capable-mover-node ((capable required-to-move) data)
+  (let [capable-mover-node ((capable! required-to-move) data)
         _ (println "Got capable mover: " capable-mover-node)
         ]
     {:data      data
      :g         (top-right-coord data)
      :last-move [(first capable-mover-node)]
-     :last-few-move []}))
+     ;:invalid-transitions []
+     }))
 
 ;; this is subtle: a preference for up and to the left is helpful
 ;; as it provides the very last disambiguation between = score moves
@@ -99,29 +100,42 @@
   (map #(mapv + a %) [[-1 0] [0 -1] [0 1] [1 0]]))
 
 ;;
+;; g [36 0] to-pos [34 3] surrounding-pos [35 3]
+;;
+(def exclude-these #{[[36 0] [34 3] [35 3]]
+                     [[36 0] [34 4] [35 4]]
+                     [[36 0] [31 3] [32 3]]
+                     [[36 0] [32 3] [33 3]]})
+
+(defn move-excluder [g to-pos]
+  (fn [surrounding-pos]
+    (let [together [g to-pos surrounding-pos]]
+      (exclude-these together))))
+
+;;
 ;; We are trying to get a route towards the empty node
 ;;
-(defn possible-moves [{:keys [last-move last-few-positions data]}]
-  (let [_ ((capable required-to-move) data)
+(defn possible-moves [{:keys [last-move data g]}]
+  (let [_ ((capable! required-to-move) data)
         to-pos  (first last-move)
         _ (println "to-pos: " to-pos)
         to-data (get data to-pos)
-        dont-repeat (into #{} last-few-positions)
+        ;dont-repeat (into #{} [])
         ;_ (println "dont-repeat: " dont-repeat)
+        excluded (move-excluder g to-pos)
         ]
-    (for [from-pos (remove dont-repeat (connections to-pos))
+    (for [from-pos (remove excluded (connections to-pos))
           :let [from-data (get data from-pos)]
           :when (viable-pair? from-data to-data)]
       [from-pos to-pos])))
 
-(defn make-move [{:keys [data g last-few-positions] :as st} [from to]]
+(defn make-move [{:keys [data g] :as st} [from to]]
   (let [from-node (get data from)]
     (-> st
         (update-in [:data to 1] + (used from-node))
         (assoc-in  [:data from 1] 0)
         (assoc :g  (if (= g from) to g)
-               :last-move [from to]
-               :last-few-positions (take keep-moves-count (conj last-few-positions to))))))
+               :last-move [from to]))))
 
 (defn next-states [{:keys [last-move] :as st}]
   (->> (possible-moves st)
@@ -176,7 +190,7 @@
 
 ;; no matter what I put it goes to max!
 (defn x-2 []
-  (find-answer2 1000 data))
+  (find-answer2 500 data))
 
 ;;
 ;; Shows that there's only one capable mover, in both example and real data
