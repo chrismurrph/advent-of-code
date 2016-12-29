@@ -188,7 +188,7 @@
           :when (viable-pair? data1 data2)]
       [pos1 pos2])))
 
-;; no matter what I put it goes to max!
+;; Gives answer of 235 now have excluded loops, but this is still too high
 (defn x-2 []
   (find-answer2 500 data))
 
