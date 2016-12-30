@@ -81,7 +81,9 @@
           _ (assert (nil? tail) (str "Not just " capable-mover ", but also: " (seq capable-movers)))]
       capable-mover)))
 
-;;(def keep-moves-count 150)
+;;
+;; Ends up with same capable-mover-node as make-initial does: x20-y6
+;;
 (defn make-initial-2 [data]
   (let [capable-mover-node ((capable! required-to-move) data)
         _ (println "Got capable mover: " capable-mover-node)
@@ -89,7 +91,6 @@
     {:data      data
      :g         (top-right-coord data)
      :last-move [(first capable-mover-node)]
-     ;:invalid-transitions []
      }))
 
 ;; this is subtle: a preference for up and to the left is helpful
@@ -99,13 +100,34 @@
 (defn connections [a]
   (map #(mapv + a %) [[-1 0] [0 -1] [0 1] [1 0]]))
 
+(def testing-times 30)
+(def real-times 250)
+(def max-times real-times)
+
 ;;
 ;; g [36 0] to-pos [34 3] surrounding-pos [35 3]
+;; Gives 235, but that's too big
 ;;
-(def exclude-these #{[[36 0] [34 3] [35 3]]
+(def exclude-these-1 #{
                      [[36 0] [34 4] [35 4]]
                      [[36 0] [31 3] [32 3]]
-                     [[36 0] [32 3] [33 3]]})
+                     [[36 0] [32 3] [33 3]]
+                     })
+
+;; Gives 243
+(def exclude-these-2 #{
+                     [[36 0] [35 3] [36 3]]
+                     })
+
+;; Gives 243 as well
+(def exclude-these-3 #{
+                       [[36 0] [35 4] [34 4]]
+                       [[36 0] [35 4] [35 5]]
+                       })
+
+(def exclude-none #{})
+
+(def exclude-these exclude-these-3)
 
 (defn move-excluder [g to-pos]
   (fn [surrounding-pos]
@@ -120,8 +142,6 @@
         to-pos  (first last-move)
         _ (println "to-pos: " to-pos)
         to-data (get data to-pos)
-        ;dont-repeat (into #{} [])
-        ;_ (println "dont-repeat: " dont-repeat)
         excluded (move-excluder g to-pos)
         ]
     (for [from-pos (remove excluded (connections to-pos))
@@ -148,7 +168,11 @@
 (defn distance [from to]
   (if (and from to)
     (apply + (map #(Math/abs %) (map - from to)))
-    Integer/MAX_VALUE))
+    (assert false (str from to))
+    ))
+
+(defn left-of [[x y]]
+  [(dec x) y])
 
 ;;
 ;; Adding x and y in g means top left has low value
@@ -156,10 +180,10 @@
 ;;
 (defn score [{:keys [g last-move]}]
   [(apply + g)
-   (distance g (first last-move))])
+   (distance (left-of g) (first last-move))])
 
 (defn next-level [state]
-  (let [[first-score next-score & tail] (sort-by score (next-states state))
+  (let [[first-score next-score] (sort-by score (next-states state))
         _ (assert (not= first-score next-score) (str "Multiple equal scores: <" first-score ">, <" next-score ">"))]
     first-score))
 
@@ -190,7 +214,7 @@
 
 ;; Gives answer of 235 now have excluded loops, but this is still too high
 (defn x-2 []
-  (find-answer2 500 data))
+  (find-answer2 max-times data))
 
 ;;
 ;; Shows that there's only one capable mover, in both example and real data
