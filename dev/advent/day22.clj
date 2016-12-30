@@ -25,6 +25,7 @@
         (string/split-lines s)))
 
 (def data (parse-input (slurp "./advent/twenty_two.txt")))
+(def bruce-data (parse-input (slurp "./advent/twenty_two_bruce.txt")))
 
 (def available (partial apply -))
 (def size first)
@@ -41,9 +42,9 @@
        (not (empty-node a))
        (>= (available b) (used a))))
 
-;; transposes, not sure why would want to do that
-(defn view-grid [{:keys [data]}]
-  (apply map vector (partition 30 (map used (vals data)))))
+;; transposes, because the data happens to have been read in the wrong way around
+(defn view-grid [{:keys [data]} part-n]
+  (apply map vector (partition part-n (map used (vals data)))))
 
 (defn pp [d]
   (binding [clojure.pprint/*print-right-margin* 200]
@@ -228,3 +229,7 @@
         capable-movers (first (filter (fn [[_ v]] (>= v required-to-move)) availables))
         ]
     capable-movers))
+
+(defn view-data []
+  (pp (view-grid (make-initial-2 data) 27))
+  (pp (view-grid (make-initial-2 bruce-data) 30)))

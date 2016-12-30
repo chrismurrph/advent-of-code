@@ -51,21 +51,27 @@
                       :dec dec-i
                       :inc inc-i})
 
-(def toggle-instructions)
+(def toggle-instructions {:tgl :inc
+                          :inc :dec})
 
-(defn runner [instructions]
-  (println instructions)
-  (assert (vector? instructions))
+(defn runner [instructs]
+  (println instructs)
+  (assert (vector? instructs))
   (fn [tags]
     (loop [state tags
+           instructions instructs
            index 0
            count 0
-           toggle false]
+           toggle-from-idx nil]
       (let [
             ;_ (println "at idx " index)
             [instr & args] (get instructions index)]
-        (if toggle
-          (assert false (str "instr: " instr " to turn into: <"  ">"))
+        (if toggle-from-idx
+          (let [new-instr (toggle-instructions instr)
+                f (instr-functions new-instr)
+                _ (assert f (str "No function for: " new-instr))
+                ]
+            (recur state instructions (inc index) (inc count) nil))
           (if instr
             (cond
               (= :jnz instr)
@@ -74,7 +80,7 @@
                     _ (assert tag-value (str "No tag value found for " tag))
                     jump-by (if (zero? tag-value) 1 num)
                     new-idx (+ index jump-by)]
-                (recur state new-idx (inc count) false))
+                (recur state instructions new-idx (inc count) nil))
 
               (= :tgl instr)
               (let [[tag] args
@@ -83,13 +89,13 @@
                     new-idx (+ index tag-value)
                     _ (println new-idx)
                     ]
-                (recur state new-idx (inc count) true))
+                (recur state instructions new-idx (inc count) index))
 
               :default
               (let [f (instr-functions instr)
                     _ (assert f (str "No function for: " instr))
                     new-state (f args state)]
-                (recur new-state (inc index) (inc count) false)))
+                (recur new-state instructions (inc index) (inc count) nil)))
             state))))))
 
 (def real-file "./advent/twenty_three.txt")
