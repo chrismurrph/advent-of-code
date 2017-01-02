@@ -18,17 +18,23 @@
     (assert (set? already-tested))
     (if (< times max-steps)
       (let [_ (when debug? (println "steps done:" times "visited:" (count already-tested)))
-            newly-generated (mapcat generate-possibilities last-round)]
+            newly-generated (mapcat generate-possibilities last-round)
+            _ (when debug? (println (str "count of new gens: " (count newly-generated))))]
         (if (seq newly-generated)
           (let [got-there? (first (filter destination-state-fn? newly-generated))]
             (if got-there?
               (do
-                ;(when debug? (println (str "Got there with: <" got-there? ">")))
+                (when debug? (println (str "Got there with: <" got-there? ">")))
                 {:steps (inc times) :res got-there?})
-              (let [now-tested (into already-tested newly-generated)]
-                (recur now-tested (into #{} (remove already-tested newly-generated)) (inc times) most-distant-candidates))))
-          [:dead-end "Nowhere to go, not even back where came from" already-tested]))
-      [:need-more-steps "Need give more steps then run again" already-tested])))
+              (let [now-tested (into already-tested newly-generated)
+                    next-round (into #{} (remove already-tested newly-generated))
+                    use-round (if (seq next-round) next-round last-round)
+                    use-times (if (seq next-round) (inc times) times)
+                    ;_ (assert (seq next-round) (str "Must be in loop as removal of already-tested excludes"))
+                    ]
+                (recur now-tested use-round use-times most-distant-candidates))))
+          [:dead-end "Nowhere to go:" (seq newly-generated)]))
+      [:need-more-steps "Need give more steps then run again, used up:" max-steps])))
 
 ;;
 ;; transducer so read normal way round
@@ -107,7 +113,7 @@
 (defn capable! [required-to-move]
   (fn [data]
     (let [availables (into (sorted-map) (map (fn [[k v]] [k (available v)]) data))
-          capable-movers (filter (fn [[_ v]] (>= v required-to-move)) availables)
+          capable-movers (filter (fn [[_ available]] (>= available required-to-move)) availables)
           [capable-mover & tail] capable-movers
           _ (assert (nil? tail) (str "Not just " capable-mover ", but also: " (seq capable-movers)))]
       capable-mover)))
@@ -160,7 +166,7 @@
 
 (def exclude-none #{})
 
-(def exclude-these exclude-these-3)
+(def exclude-these exclude-none)
 
 (defn move-excluder [g to-pos]
   (fn [surrounding-pos]
@@ -172,10 +178,10 @@
 ;;
 (defn possible-moves [{:keys [last-move data g]}]
   (let [
-        ;Can only call if get-required-to-move is a def
+        ;Can only call when get-required-to-move is a def
         ;_ ((capable! (-get-required-to-move data)) data)
         to-pos  (first last-move)
-        _ (println "to-pos: " to-pos)
+        ;_ (println "to-pos: " to-pos)
         to-data (get data to-pos)
         excluded (move-excluder g to-pos)
         ]
@@ -218,13 +224,28 @@
   [(apply + g)
    (distance (left-of g) (first last-move))])
 
-(defn next-level [grid-state]
+(defn next-level-orig [grid-state]
   (let [[first-low-scoring-grid second-low-scoring-grid] (sort-by score (next-grid-states grid-state))
         _ (assert (not= first-low-scoring-grid second-low-scoring-grid) (str "Multiple equal scores: <" first-low-scoring-grid ">, <" second-low-scoring-grid ">"))]
-    [first-low-scoring-grid]))
+    first-low-scoring-grid))
+
+(defn adjacent-to-wall? [grid-state]
+  false)
+
+(defn next-level [grid-state]
+  (let [a? (adjacent-to-wall? grid-state)
+        sorted (sort-by score (next-grid-states grid-state))
+        _ (assert (pos? (count sorted)))]
+    (if a?
+      sorted
+      (u/probe-off (take 1 sorted)))))
+
+(def last-g (atom nil))
 
 (defn probe-g [g]
-  (println "g: " g)
+  (when (not= @last-g g)
+    (reset! last-g g)
+    (println "g: " g))
   g)
 
 ;;
@@ -234,13 +255,7 @@
 ;; help g get there.
 ;;
 (defn find-answer2-orig [limit data]
-  (->> (iterate next-level (make-initial-2 data))
-       (take-while #(not= (probe-g (:g %)) [0 0]))
-       (take limit)
-       count))
-
-(defn find-answer2 [limit data]
-  (->> (iterate next-level (make-initial-2 data))
+  (->> (iterate next-level-orig (make-initial-2 data))
        (take-while #(not= (probe-g (:g %)) [0 0]))
        (take limit)
        count))
@@ -257,13 +272,15 @@
 ;; Gives answer of 235 now have excluded loops, but this is still too high
 (defn x-2 []
   ;(find-answer2 max-times blocking-data)
-  (let [data blocking-data
-        res (:steps (breadth-first-search 30
-                                         (make-initial data)
-                                         next-level
-                                         #(= (probe-g (:g %)) [0 0])
-                                         true))]
-    res))
+  (let [data real-data
+        res (breadth-first-search max-times
+                                  (make-initial data)
+                                  next-level
+                                  #(= (probe-g (:g %)) [0 0])
+                                  true)]
+    (if (map? res)
+      (:steps res)
+      res)))
 
 (defn required-quantity [data]
   (let [tr (top-right-coord data)
