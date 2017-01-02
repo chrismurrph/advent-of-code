@@ -28,11 +28,9 @@
                 {:steps (inc times) :res got-there?})
               (let [now-tested (into already-tested newly-generated)
                     next-round (into #{} (remove already-tested newly-generated))
-                    use-round (if (seq next-round) next-round last-round)
-                    use-times (if (seq next-round) (inc times) times)
-                    ;_ (assert (seq next-round) (str "Must be in loop as removal of already-tested excludes"))
+                    _ (assert (seq next-round) (str "Must be in loop as removal of already-tested excludes"))
                     ]
-                (recur now-tested use-round use-times most-distant-candidates))))
+                (recur now-tested next-round (inc times) most-distant-candidates))))
           [:dead-end "Nowhere to go:" (seq newly-generated)]))
       [:need-more-steps "Need give more steps then run again, used up:" max-steps])))
 
@@ -180,7 +178,7 @@
   (let [
         ;Can only call when get-required-to-move is a def
         ;_ ((capable! (-get-required-to-move data)) data)
-        to-pos  (first last-move)
+        to-pos (first last-move)
         ;_ (println "to-pos: " to-pos)
         to-data (get data to-pos)
         excluded (move-excluder g to-pos)
