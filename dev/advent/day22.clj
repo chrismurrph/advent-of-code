@@ -6,12 +6,37 @@
     [clojure.pprint :as pp]
     [medley.core :refer [distinct-by]]))
 
+(defn breadth-first-search [max-steps
+                            starting-grid
+                            generate-possibilities
+                            destination-state-fn?
+                            debug?]
+  (loop [already-tested #{starting-grid}
+         last-round #{starting-grid}
+         times 0
+         most-distant-candidates []]
+    (assert (set? already-tested))
+    (if (< times max-steps)
+      (let [_ (when debug? (println "steps done:" times "visited:" (count already-tested)))
+            newly-generated (mapcat generate-possibilities last-round)]
+        (if (seq newly-generated)
+          (let [got-there? (first (filter destination-state-fn? newly-generated))]
+            (if got-there?
+              (do
+                ;(when debug? (println (str "Got there with: <" got-there? ">")))
+                {:steps (inc times) :res got-there?})
+              (let [now-tested (into already-tested newly-generated)]
+                (recur now-tested (into #{} (remove already-tested newly-generated)) (inc times) most-distant-candidates))))
+          [:dead-end "Nowhere to go, not even back where came from" already-tested]))
+      [:need-more-steps "Need give more steps then run again" already-tested])))
+
 ;;
 ;; transducer so read normal way round
 ;; re-seq #"\d" - puts decimals into a sequence
 ;; Cool b/c get co-ords, size and used in one go.
 ;; So first mapentry will be [0 0] [86 73]
 ;; This map is :data in state.
+;; Notice that it goes by columns, hence need transpose to represent to humans (see view-grid)
 ;;
 (defn parse-input [s]
   (into (sorted-map)
@@ -24,7 +49,9 @@
           (map #(mapv vec %)))
         (string/split-lines s)))
 
-(def data (parse-input (slurp "./advent/twenty_two.txt")))
+(def real-data (parse-input (slurp "./advent/twenty_two.txt")))
+(def example-data (parse-input (slurp "./advent/twenty_two_example.txt")))
+(def blocking-data (parse-input (slurp "./advent/twenty_two_blocking_example.txt")))
 (def bruce-data (parse-input (slurp "./advent/twenty_two_bruce.txt")))
 
 (def available (partial apply -))
@@ -42,13 +69,17 @@
        (not (empty-node a))
        (>= (available b) (used a))))
 
-;; transposes, because the data happens to have been read in the wrong way around
-(defn view-grid [{:keys [data]} part-n]
-  (apply map vector (partition part-n (map used (vals data)))))
+;; transposes, because the data happens to have been read in the wrong way around, which
+;; is irrelevant for all but viewing
+(defn view-grid [{:keys [data]} row-count]
+  (apply map vector (partition row-count (map used (vals data)))))
 
-(defn pp [d]
-  (binding [clojure.pprint/*print-right-margin* 200]
-    (clojure.pprint/pprint d)))
+(defn pp
+  ([d]
+   (pp 200 d))
+  ([n d]
+   (binding [clojure.pprint/*print-right-margin* n]
+     (clojure.pprint/pprint d))))
 
 (defn top-right-coord [data]
   [(->> data keys (map first) (reduce max)) 0])
@@ -69,10 +100,9 @@
   (let [tr (top-right-coord data)
         tr-value (get data tr)
         required-to-move (used tr-value)
+        _ (assert (not= 0 required-to-move) (str "Wrong top right cooord: " tr))
         _ (println "Have to move: " required-to-move)]
     required-to-move))
-
-(def required-to-move (get-required-to-move data))
 
 (defn capable! [required-to-move]
   (fn [data]
@@ -86,9 +116,11 @@
 ;; Ends up with same capable-mover-node as make-initial does: x20-y6
 ;;
 (defn make-initial-2 [data]
-  (let [capable-mover-node ((capable! required-to-move) data)
+  (let [capable-mover-node ((capable! (get-required-to-move data)) data)
+        _ (assert capable-mover-node)
         _ (println "Got capable mover: " capable-mover-node)
         ]
+    ;; The starting off grid state
     {:data      data
      :g         (top-right-coord data)
      :last-move [(first capable-mover-node)]
@@ -139,7 +171,9 @@
 ;; We are trying to get a route towards the empty node
 ;;
 (defn possible-moves [{:keys [last-move data g]}]
-  (let [_ ((capable! required-to-move) data)
+  (let [
+        ;Can only call if get-required-to-move is a def
+        ;_ ((capable! (-get-required-to-move data)) data)
         to-pos  (first last-move)
         _ (println "to-pos: " to-pos)
         to-data (get data to-pos)
@@ -158,10 +192,11 @@
         (assoc :g  (if (= g from) to g)
                :last-move [from to]))))
 
-(defn next-states [{:keys [last-move] :as st}]
-  (->> (possible-moves st)
-       (filter #(not= last-move (reverse %)))
-       (map (partial make-move st))))
+(defn next-grid-states [{:keys [last-move] :as grid-st}]
+  (let [moves (->> (possible-moves grid-st)
+                   (filter #(not= last-move (reverse %))))]
+    (assert (seq moves) (str "No possible moves when last move was " last-move))
+    (map (partial make-move grid-st) moves)))
 
 ;;
 ;; distance is the sum of x and y distances. Euclidean distance
@@ -183,10 +218,10 @@
   [(apply + g)
    (distance (left-of g) (first last-move))])
 
-(defn next-level [state]
-  (let [[first-score next-score] (sort-by score (next-states state))
-        _ (assert (not= first-score next-score) (str "Multiple equal scores: <" first-score ">, <" next-score ">"))]
-    first-score))
+(defn next-level [grid-state]
+  (let [[first-low-scoring-grid second-low-scoring-grid] (sort-by score (next-grid-states grid-state))
+        _ (assert (not= first-low-scoring-grid second-low-scoring-grid) (str "Multiple equal scores: <" first-low-scoring-grid ">, <" second-low-scoring-grid ">"))]
+    [first-low-scoring-grid]))
 
 (defn probe-g [g]
   (println "g: " g)
@@ -198,6 +233,12 @@
 ;; the empty space being there. We know that the empty space is going to
 ;; help g get there.
 ;;
+(defn find-answer2-orig [limit data]
+  (->> (iterate next-level (make-initial-2 data))
+       (take-while #(not= (probe-g (:g %)) [0 0]))
+       (take limit)
+       count))
+
 (defn find-answer2 [limit data]
   (->> (iterate next-level (make-initial-2 data))
        (take-while #(not= (probe-g (:g %)) [0 0]))
@@ -207,29 +248,44 @@
 ;; => 976 was my correct answer, that this also gets
 (defn x-first-part []
   (count
-    (for [[pos1 data1] data
-          [pos2 data2] data
+    (for [[pos1 data1] real-data
+          [pos2 data2] real-data
           :when (not= pos1 pos2)
           :when (viable-pair? data1 data2)]
       [pos1 pos2])))
 
 ;; Gives answer of 235 now have excluded loops, but this is still too high
 (defn x-2 []
-  (find-answer2 max-times data))
+  ;(find-answer2 max-times blocking-data)
+  (let [data blocking-data
+        res (:steps (breadth-first-search 30
+                                         (make-initial data)
+                                         next-level
+                                         #(= (probe-g (:g %)) [0 0])
+                                         true))]
+    res))
 
-;;
-;; Shows that there's only one capable mover, in both example and real data
-;;
-(defn x-3 []
+(defn required-quantity [data]
   (let [tr (top-right-coord data)
         tr-value (get data tr)
-        required-to-move (used tr-value)
-        _ (println "Have to move: " required-to-move)
+        required-to-move (used tr-value)]
+    required-to-move))
+
+;;
+;; Shows that there's only one capable mover. Works for both example and real data
+;;
+(defn x-3 []
+  (let [data real-data
+        r (required-quantity data)
+        _ (println "Have to move: " r)
         availables (into (sorted-map) (map (fn [[k v]] [k (available v)]) data))
-        capable-movers (first (filter (fn [[_ v]] (>= v required-to-move)) availables))
+        capable-movers (filter (fn [[_ v]] (>= v r)) availables)
         ]
     capable-movers))
 
-(defn view-data []
-  (pp (view-grid (make-initial-2 data) 27))
+(defn compare-data []
+  (pp (view-grid (make-initial-2 real-data) 27))
   (pp (view-grid (make-initial-2 bruce-data) 30)))
+
+(defn view-data []
+  (pp 20 (view-grid (make-initial-2 blocking-data) 4)))
