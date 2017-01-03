@@ -6,6 +6,9 @@
     [clojure.pprint :as pp]
     [medley.core :refer [distinct-by]]))
 
+;;
+;; In the end not essential to use breadth-first-search (but solution is very data-dependent)
+;;
 (defn breadth-first-search [max-steps
                             starting-grid
                             generate-possibilities
