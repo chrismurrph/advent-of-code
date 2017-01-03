@@ -68,6 +68,8 @@
     (let [avail (available node)]
       (>= avail space-required))))
 
+(declare too-big-to-move?)
+
 (defn viable-pair? [a b]
   (and a b
        (not (empty-node a))
@@ -77,6 +79,15 @@
 ;; is irrelevant for all but viewing
 (defn view-grid [{:keys [data]} row-count]
   (apply map vector (partition row-count (map used (vals data)))))
+
+(defn fancy-view-grid [required {:keys [data]} row-count]
+  (apply map vector (partition row-count (map (fn [node]
+                                                (let [avail (available node)]
+                                                  (cond
+                                                    (too-big-to-move? node) \#
+                                                    (>= avail required) \_
+                                                    (< avail required) \.)
+                                                  )) (vals data)))))
 
 (defn pp
   ([d]
@@ -133,9 +144,13 @@
 ;; this is subtle: a preference for up and to the left is helpful
 ;; as it provides the very last disambiguation between = score moves
 
+;; If there's a wall above then creeping to the left is the thing to do
 ;; Cool that can add together tuples using multiple map
-(defn connections [a]
-  (map #(mapv + a %) [[-1 0] [0 -1] [0 1] [1 0]]))
+(defn connections [wall-above? a]
+  (let [possible-moves (if wall-above?
+                         [[-1 0]]
+                         [[-1 0] [0 -1] [0 1] [1 0]])]
+    (map #(mapv + a %) possible-moves)))
 
 (def testing-times 30)
 (def real-times 250)
@@ -174,7 +189,7 @@
 ;;
 ;; We are trying to get a route towards the empty node
 ;;
-(defn possible-moves [{:keys [last-move data g]}]
+(defn possible-moves [wall-above? {:keys [last-move data g]}]
   (let [
         ;Can only call when get-required-to-move is a def
         ;_ ((capable! (-get-required-to-move data)) data)
@@ -183,7 +198,7 @@
         to-data (get data to-pos)
         excluded (move-excluder g to-pos)
         ]
-    (for [from-pos (remove excluded (connections to-pos))
+    (for [from-pos (remove excluded (connections wall-above? to-pos))
           :let [from-data (get data from-pos)]
           :when (viable-pair? from-data to-data)]
       [from-pos to-pos])))
@@ -196,8 +211,8 @@
         (assoc :g  (if (= g from) to g)
                :last-move [from to]))))
 
-(defn next-grid-states [{:keys [last-move] :as grid-st}]
-  (let [moves (->> (possible-moves grid-st)
+(defn next-grid-states [wall-above? {:keys [last-move] :as grid-st}]
+  (let [moves (->> (possible-moves wall-above? grid-st)
                    (filter #(not= last-move (reverse %))))]
     (assert (seq moves) (str "No possible moves when last move was " last-move))
     (map (partial make-move grid-st) moves)))
@@ -214,6 +229,9 @@
 (defn left-of [[x y]]
   [(dec x) y])
 
+(defn above [[x y]]
+  [x (dec y)])
+
 ;;
 ;; Adding x and y in g means top left has low value
 ;; We want distance between g and last-move to be small - when 0 g has made it
@@ -223,16 +241,32 @@
    (distance (left-of g) (first last-move))])
 
 (defn next-level-orig [grid-state]
-  (let [[first-low-scoring-grid second-low-scoring-grid] (sort-by score (next-grid-states grid-state))
+  (let [[first-low-scoring-grid second-low-scoring-grid] (sort-by score (next-grid-states false grid-state))
         _ (assert (not= first-low-scoring-grid second-low-scoring-grid) (str "Multiple equal scores: <" first-low-scoring-grid ">, <" second-low-scoring-grid ">"))]
     first-low-scoring-grid))
 
-(defn adjacent-to-wall? [grid-state]
-  false)
+(defn too-big-to-move? [node]
+  (if (nil? node)
+    false
+    (>= (used node) 100)))
+
+;;
+;; A wall has a lot of data that can't be shifted around. Also because it may run us into a boundary we need
+;; maximum choices rather than always heading just to the left of where the :g is.
+;;
+(defn adjacent-to-wall? [{:keys [data g last-move]}]
+  (let [[from to] last-move
+        _ (assert from)
+        ;from-data? (-> data (get from) too-big-to-move?)
+        ;to-data? (-> data (get to) too-big-to-move?)
+        above-from? (-> data (get (above from)) too-big-to-move?)
+        ]
+    ;(println "g, last-move, above-from?" g last-move above-from?)
+    above-from?))
 
 (defn next-level [grid-state]
   (let [a? (adjacent-to-wall? grid-state)
-        sorted (sort-by score (next-grid-states grid-state))
+        sorted (sort-by score (next-grid-states a? grid-state))
         _ (assert (pos? (count sorted)))]
     (if a?
       sorted
@@ -271,11 +305,14 @@
 (defn x-2 []
   ;(find-answer2 max-times blocking-data)
   (let [data real-data
+        initial-grid (make-initial-2 data)
+        ;; the move only has one value in it, but that's okay I believe
+        _ (println "initial-grid: " initial-grid)
         res (breadth-first-search max-times
-                                  (make-initial data)
+                                  initial-grid
                                   next-level
                                   #(= (probe-g (:g %)) [0 0])
-                                  true)]
+                                  false)]
     (if (map? res)
       (:steps res)
       res)))
@@ -299,8 +336,10 @@
     capable-movers))
 
 (defn compare-data []
-  (pp (view-grid (make-initial-2 real-data) 27))
-  (pp (view-grid (make-initial-2 bruce-data) 30)))
+  (let [real-required (required-quantity real-data)
+        bruce-required (required-quantity bruce-data)]
+    (pp (fancy-view-grid real-required (make-initial-2 real-data) 27))
+    (pp (fancy-view-grid bruce-required (make-initial-2 bruce-data) 30))))
 
 (defn view-data []
   (pp 20 (view-grid (make-initial-2 blocking-data) 4)))
