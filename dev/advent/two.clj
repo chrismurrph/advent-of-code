@@ -1,5 +1,5 @@
-(ns advent.toilet
-  (:require [clojure.string :as str])
+(ns advent.two
+  (:require [clojure.java.io :as io])
   (:import (java.io StringReader BufferedReader)))
 
 (defn upf [out-bounds max-row]
@@ -75,7 +75,7 @@
 (def matric-width-2 5)
 (def start-loc-2 [1 3])
 
-(def use-2 true)
+(def use-2 false)
 
 (def my-matrix (if use-2 matrix-2 matrix-1))
 (def outbounds (if use-2 outbounds-2 outbounds-1))
@@ -113,8 +113,11 @@
         (nth (nth matrx clump) idx))))
   )
 
-(defn x []
-  (let [input (slurp "./advent/toilet.txt")
+;;
+;; Provides both answers depending on whether use-2 is set
+;;
+(defn x-answers []
+  (let [input (slurp (io/resource "two.txt"))
         raw-series (line-seq (BufferedReader. (StringReader. input)))
         ;_ (println (count raw-series))
         series [[:up :left :left]
@@ -133,3 +136,80 @@
         ]
     res
     ))
+
+;;
+;; Following Bruce answer
+;;
+
+(def dir {\U [0 -1]
+          \D [0 1]
+          \R [1 0]
+          \L [-1 0]})
+
+;;
+;; Given a movement from [0 0] returns the number that's on the keypad there.
+;; So [-1 -1] is a move from centre to top left, and 1 is returned b/c that's what's at top left
+;;
+(def pos-number #(+ 5 (* 3 (second %)) (first %)))
+
+(defn in-bounds? [[x y]]
+  (and (<= -1 x 1) (<= -1 y 1)))
+
+;;
+;; Note that code-ele is a massive line. eg: LUU...
+;; Simple reduce adds them all together to give us the position reached
+;;
+(defn code-to-pos [bound-fn]
+  (fn [acc code-ele]
+    ;(println "code-ele:" code-ele)
+    (->> code-ele
+         (map dir)
+         (reduce (fn [a v]
+                   (let [cp (map + a v)]
+                     (if (bound-fn cp) cp a)))
+                 acc))))
+
+(def lines (line-seq (io/reader (io/resource "two.txt"))))
+
+;;
+;; reductions function takes acc and ele
+;; For each line we get back a position
+;;
+(defn x-bruce-part-1 []
+  (->> lines
+       (reductions (code-to-pos in-bounds?)
+                   [0 0])
+       rest
+       (map pos-number)))
+
+(defn in-part-2-bounds [[x y]]
+  (and (<= -2 x 2)
+       (let [bound (- 2 (Math/abs x))]
+         (<= (- bound) y bound))))
+
+;;
+;; {[0 0] 7, [1 0] 8, [0 -2] 1, [-1 0] 6, [1 1] 12, [-1 -1] 2, [1 -1] 4, [0 2] 13, [-1 1] 10, [2 0] 9, [0 -1] 3, [-2 0] 5, [0 1] 11}
+;;
+;; Every number from 1 upwards is paired with a modified (in diamond only) cartesian product generating x and y co-ords.
+;;
+(def keypad-map
+  (into {}
+        (map
+          vector
+          (->> (for [y (range -2 3)
+                     x (range -2 3)]
+                 [x y])
+               (filter in-part-2-bounds))
+          (map inc (range)))))
+
+;;
+;; The format function will change say 11 to its hex equivalent of B.
+;; i.e. (format "%X" 11) produces "B"
+;;
+(defn x []
+  (->> lines
+       (reductions (code-to-pos in-part-2-bounds) [-2 0])
+       rest
+       (map keypad-map)
+       (map #(format "%X" %))))
+

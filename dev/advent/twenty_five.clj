@@ -144,20 +144,11 @@
 
 (def real-file "twenty_five.txt")
 (def quick-real-file "twenty_five_quick.txt")
-(def bruce-file "bruce_25.txt")
 (def file-name quick-real-file)
 
 (def small-start 2555)
 (def small-program-tags {"a" 0 "b" small-start "c" 0 :finish false})
 
-;cpy 2 c
-;jnz b 2
-;jnz 1 6
-;dec b
-;dec c
-;jnz c -4
-;inc a
-;jnz 1 -7
 (def small-program [[:cpy 2 "c"] [:jnz "b" 2] [:fin] [:dec "b"] [:dec "c"] [:jnz "c" -4]
                     [:inc "a"] [:jnz 1 -7]])
 
