@@ -36,29 +36,21 @@
   (let [instructions (map to-hiccup steps)]
     (mapv (comp vec next) instructions)))
 
-(def starting-a (atom 0))
+;(def starting-a (atom 0))
 
-(def initial-tags {"a" @starting-a "b" 0 "c" 0 "d" 0})
+(def initial-tags {"a" 2555 "b" 0 "c" 0 "d" 0 :output [] :index 0})
 
 (defn inc-i [[tag] tags]
   ;(println (str "inc of " tag))
   (update tags tag inc))
 
-(def expected-b (atom nil))
-(def stream-count (atom 0))
+;(def expected-b (atom nil))
+;(def stream-count (atom 0))
 
 (defn out-i [[tag] tags]
-  (when (= 0 (rem @starting-a 999))
-    (println (str "out of " (get tags tag) " at starting-a " @starting-a " got to length " @stream-count)))
   (assert (= tag "b") tag)
-  (let [curr-b (get tags tag)
-        got-expected? (or (nil? @expected-b) (= curr-b @expected-b))]
-    (when got-expected? (do
-                          (swap! stream-count inc)
-                          (reset! expected-b (cond (= curr-b 0) 1
-                                                   (= curr-b 1) 0
-                                                   :default (assert false curr-b)))))
-    (assoc tags :reset (not got-expected?))))
+  (let [curr-b (get tags tag)]
+    (update tags :output conj curr-b)))
 
 (defn fin-i [_ tags]
   (assoc tags :finish true))
@@ -88,59 +80,72 @@
                       :sml small-program-i})
 
 (defn runner [instructions]
-  (println instructions)
+  ;(println instructions)
   (assert (vector? instructions))
   (fn [tags]
     ;(println "starting tags: " tags)
     (let [res (loop [state tags
-                     index 0
                      counted 0]
                 (if (:finish state)
                   state
-                  (if (:reset state)
-                    (let [_ (when (> @stream-count 10) (println "Failed at stream count" @stream-count))
-                          _ (swap! starting-a inc)
-                          _ (reset! stream-count 0)
-                          ]
-                      (recur (assoc initial-tags "a" @starting-a :reset false) 0 0))
-                    (if (>= counted 100000)
-                      (do
-                        (println "ENDING STATE" @starting-a state)
-                        state)
-                      (let [
-                            [instr & args] (get instructions index)
-                            ;_ (println "at idx" index "instr" instr)
-                            ]
-                        (if instr
-                          (cond
-                            (= :jnz instr)
-                            (let [[tag-a tag-b] args
-                                  tag-a-value (if (number? tag-a) tag-a (get state tag-a))
-                                  tag-b-value (if (number? tag-b) tag-b (get state tag-b))
-                                  _ (assert tag-a-value (str "No tag value found for " tag-a " in <" state ">"))
-                                  _ (assert tag-b-value (str "No tag value found for " tag-b))
-                                  jump-by (if (zero? tag-a-value) 1 tag-b-value)
-                                  new-idx (+ index jump-by)]
-                              (recur state new-idx (inc counted)))
+                  (let [
+                        [instr & args] (get instructions (:index state))
+                        ;_ (println "at idx" index "instr" instr)
+                        ]
+                    (when instr
+                      (cond
+                        (= :jnz instr)
+                        (let [[tag-a tag-b] args
+                              tag-a-value (if (number? tag-a) tag-a (get state tag-a))
+                              tag-b-value (if (number? tag-b) tag-b (get state tag-b))
+                              _ (assert tag-a-value (str "No tag value found for " tag-a " in <" state ">"))
+                              _ (assert tag-b-value (str "No tag value found for " tag-b))
+                              jump-by (if (zero? tag-a-value) 1 tag-b-value)
+                              new-idx (+ (:index state) jump-by)]
+                          (recur (assoc state :index new-idx) (inc counted)))
 
-                            :default
-                            (let [f (instr-functions instr)
-                                  _ (assert f (str "No function for: " instr))
-                                  new-state (f args state)]
-                              (recur new-state (inc index) (inc counted))))
-                          (let [_ (when (> @stream-count 100) (println "Failed at stream count" @stream-count))
-                                _ (swap! starting-a inc)
-                                _ (reset! stream-count 0)
-                                ]
-                            (recur (assoc initial-tags "a" @starting-a :reset false) 0 0))))))))
+                        :default
+                        (let [f (instr-functions instr)
+                              _ (assert f (str "No function for: " instr))
+                              new-state (f args state)
+                              new-idx (inc (:index state))]
+                          (recur (assoc new-state :index new-idx) (inc counted))))))))
           ;_ (println "starting-a:" @starting-a)
           ]
       res)))
 
+(defn run-prog [instructions start-state]
+  (take-while (comp not nil?)
+              (iterate (fn [{:keys [index] :as state}]
+                         (let [
+                               [instr & args] (get instructions index)
+                               ;_ (println "at idx" index "instr" instr)
+                               ]
+                           (when instr
+                             (cond
+                               (= :jnz instr)
+                               (let [[tag-a tag-b] args
+                                     tag-a-value (if (number? tag-a) tag-a (get state tag-a))
+                                     tag-b-value (if (number? tag-b) tag-b (get state tag-b))
+                                     _ (assert tag-a-value (str "No tag value found for " tag-a " in <" state ">"))
+                                     _ (assert tag-b-value (str "No tag value found for " tag-b))
+                                     jump-by (if (zero? tag-a-value) 1 tag-b-value)
+                                     new-idx (+ (:index state) jump-by)]
+                                 (assoc state :index new-idx))
+
+                               :default
+                               (let [f (instr-functions instr)
+                                     _ (assert f (str "No function for: " instr))
+                                     new-state (f args state)
+                                     new-idx (inc (:index state))]
+                                 (assoc new-state :index new-idx))))))
+                       start-state)))
+
+
 (def real-file "twenty_five.txt")
 (def quick-real-file "twenty_five_quick.txt")
 (def bruce-file "bruce_25.txt")
-(def file-name bruce-file)
+(def file-name quick-real-file)
 
 (def small-start 2555)
 (def small-program-tags {"a" 0 "b" small-start "c" 0 :finish false})
@@ -156,12 +161,22 @@
 (def small-program [[:cpy 2 "c"] [:jnz "b" 2] [:fin] [:dec "b"] [:dec "c"] [:jnz "c" -4]
                     [:inc "a"] [:jnz 1 -7]])
 
+;;
+;; output of the last one before the count reached 9
+;;
+(defn try-start-int [instructions initial-tags]
+  (fn [n]
+    (:output (last (take-while #(not= (count (:output %)) 9)
+                               (run-prog instructions (assoc initial-tags "a" n)))))))
+
 (defn x []
   (let [raw-input (slurp (io/resource file-name))
         in (line-seq (BufferedReader. (StringReader. raw-input)))
         instructions (retrieve-instructions in)
-        run (runner instructions)]
-    (run initial-tags)))
+        runner (try-start-int instructions initial-tags)
+        ]
+    (count (take-while #(not= [0 1 0 1 0 1 0 1] %)
+                       (map runner (range 0 1000))))))
 
 (defn x-2 []
   (let [run (runner small-program)]
