@@ -1,204 +1,23 @@
 
-([:elevator :F4]
- [:F1
-  [[:generator "thulium"]
-   [:microchip "thulium"]
-   [:generator "plutonium"]
-   [:generator "strontium"]]]
- [:F2 [[:microchip "plutonium"] [:microchip "strontium"]]]
- [:F3
-  [[:generator "promethium"]
-   [:generator "ruthenium"]
-   [:microchip "ruthenium"]]]
- [:F4 [[:microchip "promethium"]]]
- [:elevator :F4]
- [:F1
-  [[:generator "thulium"]
-   [:microchip "thulium"]
-   [:generator "plutonium"]
-   [:generator "strontium"]]]
- [:F2 [[:microchip "plutonium"] [:microchip "strontium"]]]
- [:F3 [[:generator "ruthenium"] [:microchip "ruthenium"]]]
- [:F4 [[:microchip "promethium"] [:generator "promethium"]]]
- [:elevator :F4]
- [:F1
-  [[:generator "thulium"]
-   [:microchip "thulium"]
-   [:generator "plutonium"]
-   [:generator "strontium"]]]
- [:F2 [[:microchip "plutonium"] [:microchip "strontium"]]]
- [:F3
-  [[:generator "promethium"]
-   [:microchip "promethium"]
-   [:generator "ruthenium"]]]
- [:F4 [[:microchip "ruthenium"]]]
- [:elevator :F4]
- [:F1
-  [[:generator "thulium"]
-   [:microchip "thulium"]
-   [:generator "plutonium"]
-   [:generator "strontium"]]]
- [:F2 [[:microchip "plutonium"] [:microchip "strontium"]]]
- [:F3 [[:generator "promethium"] [:microchip "promethium"]]]
- [:F4 [[:generator "ruthenium"] [:microchip "ruthenium"]]]
- [:elevator :F4]
- [:F1
-  [[:generator "thulium"]
-   [:microchip "thulium"]
-   [:generator "plutonium"]
-   [:generator "strontium"]]]
- [:F2 [[:microchip "plutonium"] [:microchip "strontium"]]]
- [:F3 [[:microchip "promethium"] [:microchip "ruthenium"]]]
- [:F4 [[:generator "ruthenium"] [:generator "promethium"]]]
- [:elevator :F4]
- [:F1
-  [[:generator "thulium"]
-   [:microchip "thulium"]
-   [:generator "plutonium"]
-   [:generator "strontium"]]]
- [:F2 [[:microchip "plutonium"] [:microchip "strontium"]]]
- [:F3
-  [[:generator "promethium"]
-   [:microchip "promethium"]
-   [:microchip "ruthenium"]]]
- [:F4 [[:generator "ruthenium"]]]
- [:elevator :F4]
- [:F1
-  [[:generator "thulium"]
-   [:microchip "thulium"]
-   [:generator "plutonium"]
-   [:generator "strontium"]]]
- [:F2 [[:microchip "plutonium"] [:microchip "strontium"]]]
- [:F3
-  [[:microchip "promethium"]
-   [:generator "ruthenium"]
-   [:microchip "ruthenium"]]]
- [:F4 [[:generator "promethium"]]]
- [:elevator :F2]
- [:F1
-  [[:generator "thulium"]
-   [:microchip "thulium"]
-   [:generator "plutonium"]
-   [:generator "strontium"]]]
- [:F2
-  [[:microchip "plutonium"]
-   [:microchip "strontium"]
-   [:microchip "promethium"]]]
- [:F3
-  [[:generator "promethium"]
-   [:generator "ruthenium"]
-   [:microchip "ruthenium"]]]
- [:F4 []]
- [:elevator :F2]
- [:F1
-  [[:generator "thulium"]
-   [:microchip "thulium"]
-   [:generator "plutonium"]
-   [:generator "strontium"]]]
- [:F2
-  [[:microchip "plutonium"]
-   [:microchip "strontium"]
-   [:microchip "promethium"]
-   [:generator "promethium"]]]
- [:F3 [[:generator "ruthenium"] [:microchip "ruthenium"]]]
- [:F4 []]
- [:elevator :F2]
- [:F1
-  [[:generator "thulium"]
-   [:microchip "thulium"]
-   [:generator "plutonium"]
-   [:generator "strontium"]]]
- [:F2
-  [[:microchip "plutonium"]
-   [:microchip "strontium"]
-   [:microchip "ruthenium"]]]
- [:F3
-  [[:generator "promethium"]
-   [:microchip "promethium"]
-   [:generator "ruthenium"]]]
- [:F4 []]
- [:elevator :F2]
- [:F1
-  [[:generator "thulium"]
-   [:microchip "thulium"]
-   [:generator "plutonium"]
-   [:generator "strontium"]]]
- [:F2
-  [[:microchip "plutonium"]
-   [:microchip "strontium"]
-   [:generator "ruthenium"]
-   [:microchip "ruthenium"]]]
- [:F3 [[:generator "promethium"] [:microchip "promethium"]]]
- [:F4 []]
- [:elevator :F2]
- [:F1
-  [[:generator "thulium"]
-   [:microchip "thulium"]
-   [:generator "plutonium"]
-   [:generator "strontium"]]]
- [:F2
-  [[:microchip "plutonium"]
-   [:microchip "strontium"]
-   [:generator "ruthenium"]
-   [:generator "promethium"]]]
- [:F3 [[:microchip "promethium"] [:microchip "ruthenium"]]]
- [:F4 []]
- [:elevator :F2]
- [:F1
-  [[:generator "thulium"]
-   [:microchip "thulium"]
-   [:generator "plutonium"]
-   [:generator "strontium"]]]
- [:F2
-  [[:microchip "plutonium"]
-   [:microchip "strontium"]
-   [:generator "ruthenium"]]]
- [:F3
-  [[:generator "promethium"]
-   [:microchip "promethium"]
-   [:microchip "ruthenium"]]]
- [:F4 []]
- [:elevator :F2]
- [:F1
-  [[:generator "thulium"]
-   [:microchip "thulium"]
-   [:generator "plutonium"]
-   [:generator "strontium"]]]
- [:F2
-  [[:microchip "plutonium"]
-   [:microchip "strontium"]
-   [:generator "promethium"]]]
- [:F3
-  [[:microchip "promethium"]
-   [:generator "ruthenium"]
-   [:microchip "ruthenium"]]]
- [:F4 []])
+[;; a ends up with value (* 365 7) or 2555
+ ;; b,c, and d are used as temporary variables
+ ;; Actually d is initialised to initial value of a plus 2555
+ [:cpy a d]
+ [:cpy 7 c] [:cpy 365 b] [:inc d] [:dec b] [:jnz b -2] [:dec c] [:jnz c -5]
+ ;; -21 brings back to here
+ [:cpy d a]
 
-((x3)
- (3x3)ABC
- (2x3)XY
- (5x2)PQRST)
-X
-((x9)
- (3x2)TWO
- (5x7)SEVEN)
+ ;; b gets 2555 (if initial a was 0)
+ ;; -19 brings back to here
+ [:jnz 0 0] [:cpy a b] [:cpy 0 a]
 
-445
+ ;; b is big number that will be slowly decremented as a incremented (from 0)
+ ;; when finally b is zero go to next section, having set a
+ ;; and c will be either 2 or 1
 
-AssertionError Assert failed:
+ [:cpy 2 c] [:jnz b 2] [:jnz 1 6] [:dec b] [:dec c] [:jnz c -4]
+ [:inc a] [:jnz 1 -7]
 
-{:index 8, :mode :mode/normal, :take-outs
-
-[
-{:index 1, :takeout "ABC", :bracket-contents {:counting-out 3, :repeat-times 3}}
-{:index 3, :takeout "XY", :bracket-contents {:counting-out 2, :repeat-times 3}}
-{:index 5, :takeout "PQRST", :bracket-contents {:counting-out 5, :repeat-times 2}}
-{:index 7, :takeout "(3x2)TWO(5x7)SEVEN", :bracket-contents {:counting-out 18, :repeat-times 9}}],
-
-:normals [
-{:index 0, :normal nil}
-{:index 2, :normal nil}
-{:index 4, :normal nil}
-{:index 6, :normal "X"}],
-
-:current nil, :bracket-contents nil}
+ ;; when c has become 0 we jump out of this line to the next
+ [:cpy 2 b] [:jnz c 2] [:jnz 1 4] [:dec b] [:dec c] [:jnz 1 -4]
+ [:jnz 0 0] [:out b] [:jnz a -19] [:jnz 1 -21]]
