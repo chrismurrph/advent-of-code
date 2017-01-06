@@ -2,7 +2,7 @@
   (:require
     [utils :as u]
     [clojure.java.io :as io]
-    [clojure.string :as string]
+    [clojure.string :as s]
     [clojure.pprint :as pp]
     [medley.core :refer [distinct-by]]))
 
@@ -54,7 +54,7 @@
           (map #(take 4 %))
           (map #(partition 2 %))
           (map #(mapv vec %)))
-        (string/split-lines s)))
+        (s/split-lines s)))
 
 (def real-data (parse-input (slurp "./advent/twenty_two.txt")))
 (def example-data (parse-input (slurp "./advent/twenty_two_example.txt")))

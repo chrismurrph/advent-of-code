@@ -1,5 +1,5 @@
 (ns utils
-  (:require [clojure.string :as str]
+  (:require [clojure.string :as s]
             [clojure.pprint :as pp]))
 
 ;;
@@ -153,7 +153,7 @@
         _ (assert value)
         _ (assert s (str "Can't look for <" value "> in nil"))
         _ (assert from-index)
-        res (str/index-of s value from-index)]
+        res (s/index-of s value from-index)]
 
     (if (nil? res)
       nil
@@ -177,7 +177,7 @@
 
 (defn indexes-of [s value]
   (loop [acc [] idx 0]
-    (let [res (str/index-of s value idx)]
+    (let [res (s/index-of s value idx)]
       (if (nil? res)
         acc
         (recur (conj acc res) (inc res))))))
@@ -303,12 +303,12 @@
 (defn comma-str->ints
   [string]
   (map #(Long/parseLong %)
-       (clojure.string/split string #",")))
+       (s/split string #",")))
 
 (defn space-str->ints
   [string]
   (map #(Long/parseLong %)
-       (clojure.string/split string #" ")))
+       (s/split string #" ")))
 
 (defn many-line-reader [lines item-fn no-overall-header]
   (let [seed {:expecting (if no-overall-header :case-header :overall-header)
@@ -384,7 +384,7 @@
         (throw (new AssertionError (str "Assert failed: " ~message "\n" (pr-str '~x))))))))
 
 (defn ends-with? [s ending]
-  (= (dec (count s)) (str/last-index-of s ending)))
+  (= (dec (count s)) (s/last-index-of s ending)))
 
 ;(defn fibonacci-seq [size]
 ;  (loop [acc [1N 1N]

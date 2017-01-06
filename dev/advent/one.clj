@@ -1,5 +1,5 @@
 (ns advent.one
-  (:require [clojure.string :as str]
+  (:require [clojure.string :as s]
             [clojure.java.io :as io]
             [utils :as u]))
 
@@ -85,7 +85,7 @@
 ;;
 (defn x-1 []
   (let [input (slurp (io/resource "one.txt"))
-        instructions (str/split input #", ")
+        instructions (s/split input #", ")
         [x y] (answer instructions)
         blocks-away (+ (u/abs x) (u/abs y))]
     blocks-away))

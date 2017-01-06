@@ -1,11 +1,11 @@
 (ns advent.day21
   (:require
     [clojure.java.io :as io]
-    [clojure.string :as string]))
+    [clojure.string :as s]))
 
 (def instr-data
   (->> (slurp "./advent/twenty_one.txt")
-       (string/split-lines)
+       (s/split-lines)
        (map #(read-string (str "[" % "]")))))
 
 ;; operations

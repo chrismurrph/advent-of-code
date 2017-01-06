@@ -1,5 +1,6 @@
 (ns hackerrank.picking-numbers
-  (:require [utils :as u]))
+  (:require [utils :as u]
+            [clojure.string :as s]))
 
 (def input ["6"
             "4 6 5 3 3 1"])
@@ -16,7 +17,7 @@
 (defn x []
   (let [str->ints (fn [string]
                     (map #(Integer/parseInt %)
-                         (clojure.string/split string #" ")))
+                         (s/split string #" ")))
         ;input (line-seq (java.io.BufferedReader. *in*))
         numbers (str->ints (first (next input-2)))
         freqs (reverse (sort-by second (frequencies numbers)))

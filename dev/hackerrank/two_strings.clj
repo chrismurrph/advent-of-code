@@ -1,5 +1,5 @@
 (ns hackerrank.two-strings
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as s]))
 
 (def input ["2"
             "hello"
@@ -24,13 +24,13 @@
 (defn common-2 [[left right]]
   (let [together (for [i left]
                    i)]
-    (first (filter (fn [l] (str/index-of right l)) together))
+    (first (filter (fn [l] (s/index-of right l)) together))
     ))
 
 (defn x []
   (let [str->ints (fn [string]
                     (map #(Integer/parseInt %)
-                         (clojure.string/split string #" ")))
+                         (s/split string #" ")))
         ;input (line-seq (java.io.BufferedReader. *in*))
         pairs (partition 2 (next input))
         res (map (memoize common-1) pairs)

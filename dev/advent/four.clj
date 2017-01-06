@@ -1,7 +1,7 @@
 (ns advent.four
-  (:require [clojure.string :as str]
-            [utils :as u])
-  (:import (java.io BufferedReader StringReader)))
+  (:require [clojure.string :as s]
+            [utils :as u]
+            [clojure.java.io :as io]))
 
 (def input-1 "aaaaa-bbb-z-y-x-123[abxyz]")
 (def input-2 "qzmt-zixmtkozy-ivhz-343[abxyz]")
@@ -27,10 +27,10 @@
           new-letter)
         \space))))
 
-(defn decrypt [in]
+(defn my-decrypt [in]
   (let [
         ;_ (println "decrypt" in)
-        before-sector-idx (str/last-index-of in "-")
+        before-sector-idx (s/last-index-of in "-")
         letters (take before-sector-idx in)
         sector-id (u/string->int (apply str (take-while #(not= \[ %) (drop (inc before-sector-idx) in))))
         rotate-f (rotate sector-id)
@@ -51,7 +51,7 @@
         cf-res))))
 
 (defn get-sector-id [in]
-  (let [before-sector-idx (str/last-index-of in "-")
+  (let [before-sector-idx (s/last-index-of in "-")
         sector-id (u/string->int (apply str (take-while #(not= \[ %) (drop (inc before-sector-idx) in))))
         letters (remove #{\-} (take before-sector-idx in))
         grouped (group-by identity letters)
@@ -66,24 +66,91 @@
       sector-id)))
 
 (defn x-first-part []
-  (let [input (slurp "./advent/four.txt")
-        raw-series (line-seq (BufferedReader. (StringReader. input)))
+  (let [
+        raw-series (line-seq (io/reader (io/resource "four.txt")))
         series (remove nil? (map get-sector-id raw-series))
         ;_ (get-sector-id (nth raw-series 2))
         ]
     (apply + series)
     ))
 
-(defn x []
-  (let [input (slurp "./advent/four.txt")
-        raw-series (line-seq (BufferedReader. (StringReader. input)))
-        series (map decrypt raw-series)
-        possibilities (filter #(str/index-of (:decrypted %) "north") series)
+(defn x-second-part []
+  (let [
+        raw-series (line-seq (io/reader (io/resource "four.txt")))
+        series (map my-decrypt raw-series)
+        possibilities (filter #(s/index-of (:decrypted %) "north") series)
         ]
     possibilities))
 
 (defn x-2 []
-  (decrypt input-2))
+  (my-decrypt input-2))
 
 (defn x-3 []
   ((rotate 3) \y))
+
+;;
+;; Following Bruce's more concise and easier to read code
+;;
+
+(defn parse-room [s]
+  (let [parts (s/split s #"-")
+        [id chk] (s/split (last parts) #"\[")]
+    {:word  (apply concat (butlast parts))
+     :chksum (butlast chk)
+     :id (Integer/parseInt id)}))
+
+;;
+;; sort-by takes a keyfn - remember `sort-by count`
+;; It is all about one element - here one mapentry
+;; Here frquencies will be returning [letter freq] mapentries
+;; sorting naturally goes from lowest to highest - hence `(- freq)`
+;; so most frquent first.
+;; `(int \a)` gives ascii number of letter \a => 97.
+;; `(int \b)` is 98 - so will be sorting alphabetically secondarily
+;;
+(defn checksum [word]
+  (->> word
+       frequencies
+       (sort-by (fn [[letter freq]] [(- freq) (int letter)]))
+       (map first)
+       (take 5)))
+
+(defn real-room? [{:keys [word chksum] :as room}]
+  (= (checksum word) chksum))
+
+(comment
+  (real-room? (parse-room "aaaaa-bbb-z-y-x-123[abxyz]"))
+  (real-room? (parse-room "a-b-c-d-e-f-g-h-987[abcde]"))
+  (real-room? (parse-room "not-a-real-room-404[oarel]"))
+  (real-room? (parse-room "totally-real-room-200[decoy]"))
+  )
+
+;; part 1
+#_(->> lines
+       (map parse-room)
+       (filter real-room?)
+       (map :id)
+       (reduce +))
+;;=> 278221
+
+(defn shift-letter [n letter]
+  (-> letter
+      int
+      (- 97)
+      (+ n)
+      (mod 26)
+      (+ 97)
+      char))
+
+(defn decrypt [{:keys [word id] :as room}]
+  (assoc room :decrypted
+              (apply str (map (partial shift-letter id) word))))
+
+#_(decrypt (parse-room "qzmt-zixmtkozy-ivhz-343"))
+
+;; part 2
+#_(->> lines
+       (map parse-room)
+       (filter real-room?)
+       (map decrypt)
+       (filter #(re-matches #".*north.*" (:decrypted %))))

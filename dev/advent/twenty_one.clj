@@ -1,6 +1,6 @@
 (ns advent.twenty-one
   (:require [instaparse.core :as insta]
-            [clojure.string :as str]
+            [clojure.string :as s]
             [clojure.pprint :as pp]
             [utils :as u])
   (:import (java.io StringReader BufferedReader)))
@@ -45,7 +45,7 @@
 ;; rotate based on position of letter d finds the index of letter d (4), then rotates the string right once, plus a number of times
 ;; equal to that index, plus an additional time because the index was at least 4, for a total of 6 right rotations: decab.
 (defn rotate-position [s a]
-  (let [x (str/index-of s a)
+  (let [x (s/index-of s a)
         extra (if (>= x 4) 1 0)
         times (+ 1 x extra)
         ;_ (println times s)
@@ -56,7 +56,7 @@
   (let [sub (subs s m (inc n))
         before (subs s 0 m)
         after (subs s (inc n) (count s))
-        rev (str/reverse sub)]
+        rev (s/reverse sub)]
     ;[m n s before rev after]
     (str before rev after)
     ))
@@ -77,8 +77,8 @@
 
 (defn -swap-letter-wrong [s b a]
   (let [
-        -x (str/index-of s a)
-        -y (str/index-of s b)
+        -x (s/index-of s a)
+        -y (s/index-of s b)
         x-use (min -x -y)
         y-use (max -x -y)
         _ (assert (> y-use x-use))
@@ -187,7 +187,7 @@
 ;;
 (defn execute-cmd-unscramble [cmd acc arg-1 arg-2]
   (case cmd
-    :move (move-position (str/reverse acc) arg-1 arg-2)
+    :move (move-position (s/reverse acc) arg-1 arg-2)
     :rotate-based (inv-rotate-based acc arg-1)
     :rotate-direction (cond
                         (= :right arg-1)
@@ -196,7 +196,7 @@
                         (rotate-right acc arg-2)
                         )
     :swap-letter (swap-letter acc arg-1 arg-2)
-    :swap-position (swap-position (str/reverse acc) arg-1 arg-2)
+    :swap-position (swap-position (s/reverse acc) arg-1 arg-2)
     :reverse (reverse-positions acc arg-1 arg-2)))
 
 (defn run-instructions [input instructions executor]

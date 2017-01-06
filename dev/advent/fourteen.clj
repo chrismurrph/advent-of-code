@@ -1,5 +1,5 @@
 (ns advent.fourteen
-  (:require [clojure.string :as str]
+  (:require [clojure.string :as s]
             [clojure.pprint :as pp]))
 
 (import 'java.security.MessageDigest
@@ -30,7 +30,7 @@
   (assert (= 1 (count (frequencies sub-seq))))
   (fn [hash]
     (assert (decent-hash? hash))
-    (str/index-of hash sub-seq)))
+    (s/index-of hash sub-seq)))
 
 (defn triple-from-hash [hash]
   (first (drop-while #(< (count %) 3) (partition-by identity hash))))

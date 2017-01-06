@@ -1,7 +1,7 @@
 (ns advent.three
-  (:require [clojure.string :as str]
-            [utils :as u])
-  (:import (java.io StringReader BufferedReader)))
+  (:require [clojure.string :as s]
+            [utils :as u]
+            [clojure.java.io :as io]))
 
 (defn possible? [sides]
   (let [ordered-sides (sort > sides)
@@ -10,17 +10,18 @@
     (> sum-smaller biggest)))
 
 (defn trans [line]
-  (let [three-num-str (str/split (str/trim line) #"\s+")
+  (let [three-num-str (s/split (s/trim line) #"\s+")
         three-num (mapv u/string->int three-num-str)]
     three-num))
 
+;;
+;; Just does 2nd part
+;;
 (defn x []
-  (let [input (slurp "./advent/three.txt")
-        raw-series (line-seq (BufferedReader. (StringReader. input)))
-        series (mapv trans raw-series)
-        transformed-series (apply concat (map u/transpose (partition 3 series)))
-        possibles (map possible? transformed-series)
-        num-true (count (filter identity possibles))
-        ]
-    num-true
-    ))
+  (let [raw-series (line-seq (io/reader (io/resource "three.txt")))]
+    (->> raw-series
+         (mapv trans)
+         (partition 3)
+         (mapcat u/transpose)
+         (filter possible?)
+         count)))

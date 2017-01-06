@@ -1,5 +1,5 @@
 (ns advent.five
-  (:require [clojure.string :as str]
+  (:require [clojure.string :as s]
             [utils :as u]))
 
 (import 'java.security.MessageDigest
@@ -18,7 +18,7 @@
     (let [st (str s num)
           hashed (md5 st)
           position (u/string->int-not-strict (str (nth hashed 5)))]
-      (when (and ((fnil >= 10) position 0) ((fnil <= 10) position 7) (str/starts-with? hashed "00000"))
+      (when (and ((fnil >= 10) position 0) ((fnil <= 10) position 7) (s/starts-with? hashed "00000"))
         {:fine-hash hashed :num num :position position :character (nth hashed 6)}))))
 
 (defn five-leading [start s]

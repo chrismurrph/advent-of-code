@@ -1,6 +1,5 @@
 (ns advent.six
-  (:require [clojure.string :as str]
-            [utils :as u])
+  (:require [utils :as u])
   (:import (java.io BufferedReader StringReader)))
 
 (defn transpose [s]

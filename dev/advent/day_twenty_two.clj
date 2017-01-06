@@ -1,6 +1,6 @@
 (ns advent.day-twenty-two
   (:require [clojure.java.io :as io]
-            [clojure.string :as str]
+            [clojure.string :as s]
             [clojure.data :as data]
             [clojure.data.priority-map :as pm]))
 
@@ -33,7 +33,7 @@
   (let [nodes (->> "day_22.txt"
                    io/resource
                    slurp
-                   str/split-lines
+                   s/split-lines
                    (drop 2)
                    (map read-node))]
     (count (viable-pairs nodes))))
@@ -42,7 +42,7 @@
 
 (defn nodes []
   (let [nodes (->> real-data
-                   str/split-lines
+                   s/split-lines
                    (drop 2)
                    (map read-node))]
     nodes))
@@ -58,7 +58,7 @@
 /dev/grid/node-x2-y0   10T    6T     4T   60%
 /dev/grid/node-x2-y1    9T    8T     1T   88%
 /dev/grid/node-x2-y2    9T    6T     3T   66%"
-                   str/split-lines
+                   s/split-lines
                    (drop 1)
                    (map read-node))]
     nodes))

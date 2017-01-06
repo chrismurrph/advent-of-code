@@ -1,10 +1,10 @@
 (ns advent.twenty
-  (:require [clojure.string :as str]
+  (:require [clojure.string :as s]
             [utils :as u])
   (:import (java.io StringReader BufferedReader)))
 
 (defn make-obj [input]
-  (let [[lower upper] (str/split input #"-")]
+  (let [[lower upper] (s/split input #"-")]
     {:lower (u/string->int lower) :upper (u/string->int upper)}))
 
 (defn lower-abutting [int1 int2]

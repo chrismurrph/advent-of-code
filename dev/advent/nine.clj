@@ -1,6 +1,6 @@
 (ns advent.nine
   (:require [utils :as u]
-            [clojure.string :as str])
+            [clojure.string :as s])
   (:import (java.io StringReader BufferedReader)))
 
 (defn make-repeating-1 [brackets-spec]
@@ -102,10 +102,10 @@
 (def test-input-8 "(18x9)(3x2)TWO(5x7)SEVEN")
 
 (defn make-repeating-2 [brackets-spec]
-  (if (= 0 (str/index-of brackets-spec "("))
+  (if (= 0 (s/index-of brackets-spec "("))
     (let [counting-out (u/string->int (u/between "(" "x" brackets-spec))
           repeat-times (u/string->int (u/between "x" ")" brackets-spec))
-          close-br (inc (str/index-of brackets-spec ")"))]
+          close-br (inc (s/index-of brackets-spec ")"))]
       {:counting-out counting-out :repeat-times repeat-times :left-over (apply str (drop close-br brackets-spec))})
     (assert false "Don't call unless starts with a bracket")))
 
@@ -125,7 +125,7 @@
     [normal-lengths take-outs]))
 
 (defn decompressed-length [in]
-  (let [open-bracket-at (str/index-of in "(")
+  (let [open-bracket-at (s/index-of in "(")
         ;_ (println "IN:" in)
         ]
     (condp = open-bracket-at
@@ -142,7 +142,7 @@
                     ;_ (println (str "Not Accounting for " unaccounted-for ", " (count unaccounted-for)))
                     ]
                 (+ res #_(decompressed-length unaccounted-for)))
-            1 (let [close-br (inc (str/index-of in ")"))
+            1 (let [close-br (inc (s/index-of in ")"))
                     after-close (apply str (drop close-br in))
                     shorter (apply str (take counting-out after-close))
                     left-over (apply str (drop counting-out after-close))

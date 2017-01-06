@@ -1,8 +1,7 @@
 (ns advent.twenty-two
   (:require [clojure.pprint :as pp]
-            [clojure.string :as string]
-            [utils :as u]
-            [clojure.string :as str])
+            [clojure.string :as s]
+            [utils :as u])
   (:import (java.io StringReader BufferedReader)))
 
 (defn all-but-last [in]
@@ -13,7 +12,7 @@
   (#{\0 \1 \2 \3 \4 \5 \6 \7 \8 \9} x))
 
 (defn number-after [s a]
-  (let [x-idx (str/index-of s a)]
+  (let [x-idx (s/index-of s a)]
     (u/string->int (apply str (seq (take-while #(number-char? %) (drop (inc x-idx) s)))))))
 
 (defn get-x [grid-id]
@@ -38,7 +37,7 @@
 ;;
 ;;
 (defn make-obj [line]
-  (let [line-as-cells (string/split (string/trim line) #"\s+")
+  (let [line-as-cells (s/split (s/trim line) #"\s+")
         ;_ (println cells)
         ]
     (cell->obj line-as-cells)))
