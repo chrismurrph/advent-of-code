@@ -10,6 +10,7 @@
                  [instaparse "1.4.2"]
                  [proto-repl "0.3.1"]
                  [medley "0.8.4"]
+                 [digest "1.4.4"]
                  [org.clojure/math.combinatorics "0.1.1"]]
 
   :main ^:skip-aot parser.core

@@ -95,9 +95,9 @@
 (defn parse-room [s]
   (let [parts (s/split s #"-")
         [id chk] (s/split (last parts) #"\[")]
-    {:word  (apply concat (butlast parts))
+    {:word   (apply concat (butlast parts))
      :chksum (butlast chk)
-     :id (Integer/parseInt id)}))
+     :id     (Integer/parseInt id)}))
 
 ;;
 ;; sort-by takes a keyfn - remember `sort-by count`
@@ -133,24 +133,37 @@
        (reduce +))
 ;;=> 278221
 
-(defn shift-letter [n letter]
-  (-> letter
-      int
-      (- 97)
-      (+ n)
-      (mod 26)
-      (+ 97)
-      char))
+(defn bruce-part-1 []
+  (->> (line-seq (io/reader (io/resource "four.txt")))
+       (map parse-room)
+       (filter real-room?)
+       (map :id)
+       (reduce +)))
+
+;;
+;; switch to ascii decimal and back again
+;; int to get into ascii and char to come back again
+;;
+(defn shift-letter [n]
+  #(-> %
+       int
+       (- 97)
+       (+ n)
+       (mod 26)
+       (+ 97)
+       char))
 
 (defn decrypt [{:keys [word id] :as room}]
   (assoc room :decrypted
-              (apply str (map (partial shift-letter id) word))))
+              (apply str (map (shift-letter id) word))))
 
-#_(decrypt (parse-room "qzmt-zixmtkozy-ivhz-343"))
-
-;; part 2
-#_(->> lines
+;;
+;; He used re-matches. re-find is better as don't need to match whole string, so don't need to know
+;; about regular expressions
+;;
+(defn bruce-part-2 []
+  (->> (line-seq (io/reader (io/resource "four.txt")))
        (map parse-room)
        (filter real-room?)
        (map decrypt)
-       (filter #(re-matches #".*north.*" (:decrypted %))))
+       (filter #(re-find #"north" (:decrypted %)))))
