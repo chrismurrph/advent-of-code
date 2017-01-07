@@ -27,8 +27,6 @@
 
 (defn x []
   (let [
-        ;input (slurp "./advent/six.txt")
-        ;raw-series (line-seq (BufferedReader. (StringReader. input)))
         raw-series (line-seq (io/reader (io/resource "six.txt")))
         series (transpose raw-series)
         freqs (map frequencies series)

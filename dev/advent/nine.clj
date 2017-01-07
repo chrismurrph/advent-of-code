@@ -1,6 +1,7 @@
 (ns advent.nine
   (:require [utils :as u]
-            [clojure.string :as s])
+            [clojure.string :as s]
+            [clojure.java.io :as io])
   (:import (java.io StringReader BufferedReader)))
 
 (defn make-repeating-1 [brackets-spec]
@@ -72,7 +73,7 @@
     in))
 
 (defn first-part-correct []
-  (let [input (slurp "./advent/nine.txt")
+  (let [input (slurp "./advent/nine.txt") ;; haven't converted despite file moved
         raw-series (first (line-seq (BufferedReader. (StringReader. input))))
         _ (println raw-series)
         res (map (fn [take-out]
@@ -183,3 +184,106 @@
   (assert (= 20 (decompressed-length test-input-4)))
   (assert (= 9 (decompressed-length test-input-3)))
   )
+
+;;
+;; Following Bruce's
+;; So much shorter!
+;;
+
+;;
+;; one huge string with one or more directives (in brackets) followed by one or more capital letters
+;;
+(def data (s/trim (slurp (io/resource "nine.txt"))))
+
+;;
+;; When have brackets in regex suddenly a vector is returned. First element is the result, then one for
+;; each bracket. So here we get say 4 and 14 from (4x14)
+;;
+(def directive-regex #"(\((\d+)x(\d+)\)).*")
+
+;;
+;; Always the missing piece when dealing with strings and sequences of chars
+;;
+(defn lazy->str [l]
+  (apply str l))
+
+;;
+;; Returns [[cnt rpt] s], where s is what's left after the directive i.e. what to apply the directive to
+;;
+(defn parse-dir [s]
+  (when-let [[_ directive & args] (re-matches directive-regex (lazy->str s))]
+    [(u/to-ints args) (drop (count directive) s)]))
+
+;;
+;; Return two things in the vector. Notice the 2nd is the rest of the huge string
+;;
+(defn parse-directive [s]
+  (when-let [[[cnt rpt] s] (parse-dir s)]
+    [(take (* cnt rpt) (cycle (take cnt s))) (drop cnt s)]))
+
+(defn starts-with-directive? [d]
+  (re-matches directive-regex (apply str (take 20 d))))
+
+(defn x []
+  (vector
+    (re-matches directive-regex "(4x14)JVWV(84x11)(24x2)YAFPPYWOQJKUKQTJACJAOWYF")
+
+    ;; Returns ["(84x11)(24x2)YAFPPYW" "(84x11)" "84" "11"]
+    (re-matches directive-regex "(84x11)(24x2)YAFPPYWOQJKUKQTJACJAOWYF")
+
+    ;; Returns nil (but not if use re-find)
+    (re-matches directive-regex "Y(84x11)AFPPYWOQJKUKQTJACJAOWYF")))
+
+;;
+;; The directive doesn't have to be right at beginning. As long as is somewhere.
+;; (Know this b/c using re-find not re-matches)
+;;
+(defn has-directive? [d]
+  (re-find directive-regex (lazy->str d)))
+
+(defn part1 [d]
+  (loop [accum []
+         data d]
+    (cond
+      (empty? data) (lazy->str accum)
+      ;(starts-with-directive? data)
+      :default
+      (let [[ac s] (parse-directive data)]
+        (recur (concat accum ac) s))
+      ;:else (recur (conj (vec accum) (first data)) (rest data))
+      )))
+
+;; part 1
+#_(count (part1 data))
+;; => 112830
+(defn x-1 []
+  (count (part1 data)))
+
+;;
+;; Idea of part 2 is that expansion is done then directives within are looked for, expansion done etc., till
+;; no more directives. Recurse on the part before, if it has directives.
+;; We only need the length, so accum here.
+;;
+(defn part2 [d]
+  (loop [accum 0
+         data d]
+    (cond
+      (empty? data) accum
+      ;(starts-with-directive? data)
+      :default
+      (when-let [[[cnt rpt] s] (parse-dir data)]
+        (let [[part s] (split-at cnt s)]
+          (recur (+ accum
+                    (* rpt (if (has-directive? part) (part2 part) (count part))))
+                 s)))
+      ;:else (recur (inc accum) (rest data))
+      )))
+
+#_(part2 "(27x12)(20x12)(13x14)(7x10)(1x12)A")
+#_(part2 "(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN")
+
+#_(time (part2 data))
+
+(defn x-2 []
+  (part2 data))
+
