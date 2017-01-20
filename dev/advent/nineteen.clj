@@ -150,55 +150,107 @@
     [(dec idx) (dec (- after before))]))
 
 (defn canonical->list [{:keys [low high missing-idx missing-idx-len] :as st}]
-  (let [big-list (range low (inc high))
-        _ (println "big" big-list)
+  (let [_ (assert low)
+        _ (assert high)
+        big-list (range low (inc high))
+        ;_ (println "big" big-list)
         ]
-    (seq (concat (take (inc missing-idx) big-list) (drop (inc (+ missing-idx missing-idx-len)) big-list)))))
+    (if missing-idx
+      (seq (concat (take (inc missing-idx) big-list) (drop (inc (+ missing-idx missing-idx-len)) big-list)))
+      big-list)))
 
 ;;
 ;; low and high are first and last, so '(3 7) has low of 3 and high of 7
 ;;
-(defn canonical [low high missing-idx missing-idx-len]
-  {:low low :high high :missing-idx missing-idx :missing-idx-len missing-idx-len})
+(defn canonical
+  ([low high missing-idx missing-idx-len]
+   {:low low :high high :missing-idx missing-idx :missing-idx-len missing-idx-len})
+  ([low high]
+   {:low low :high high}))
 
 #_(defn list->canonical [in]
   (let [[missing-idx missing-idx-len] (get-grab in)]
     (canonical (first in) (last in) missing-idx missing-idx-len)))
 
-(defn next-state [{:keys [counted curr-idx in] :as st}]
+(defn next-state-1 [{:keys [counted curr-idx in] :as st}]
   (let [
         grab (rem (+ curr-idx (if (odd? counted) (/ (dec counted) 2) (/ counted 2))) counted)
         _ (println "ITER" st "will grab" grab)
         ]
     {:curr-idx (inc curr-idx) :counted (dec counted) :in (concat (take grab in) (drop (inc grab) in))}))
 
+(defn apply-grab [counted grab {:keys [low high missing-idx missing-idx-len] :as in}]
+  (println "low, high: " low high)
+  (println grab missing-idx counted)
+  (let [res (cond
+              (= (dec counted) grab) (if (= 2 counted)
+                                       (canonical low low)
+                                       (canonical low (dec high) missing-idx missing-idx-len))
+              (zero? grab) (canonical (inc low) high (when missing-idx (dec missing-idx)) missing-idx-len)
+              (nil? missing-idx) (canonical low high (dec grab) 1)
+              (= grab (inc missing-idx)) (canonical low high missing-idx (inc missing-idx-len))
+              (= grab missing-idx) (canonical low high (dec missing-idx) (inc missing-idx-len))
+              :default (assert false (str "can't apply grab: " grab ", " in ", also " (canonical->list in) ", counted: " counted)))]
+    ;(assert false (str "return apply grab: " grab ", " in ", " res ", at " counted))
+    res
+    ))
+
+(defn next-state-2 [{:keys [counted curr-idx in] :as st}]
+  (let [
+        grab (rem (+ curr-idx (if (odd? counted) (/ (dec counted) 2) (/ counted 2))) counted)
+        ;_ (println "ITER" st "will grab" grab)
+        ]
+    {:curr-idx (inc curr-idx) :counted (dec counted) :in (apply-grab counted grab in)}))
+
 (defn x-2 []
   (let [curr-idx 3
         counted 2
         in '(2 4)
         st {:curr-idx curr-idx :counted counted :in in}]
-    (next-state st)))
+    (next-state-2 st)))
 
-(defn x-3 []
-  (let [num-eleves 8
+(defn x-7 []
+  (let [num-eleves 9
         curr-idx 0
         counted num-eleves
         in (range 1 (inc num-eleves))
+        ;in (canonical 1 num-eleves)
         st {:curr-idx curr-idx :counted counted :in in}
         ;_ (println "init:" st)
         ]
     (first
       (filter #(= (:counted %) 1)
-              (iterate next-state st)))))
+              (iterate next-state-1 st)))))
+
+(defn x-3 []
+  (let [num-eleves 9
+        curr-idx 0
+        counted num-eleves
+        ;in (range 1 (inc num-eleves))
+        in (canonical 1 num-eleves)
+        st {:curr-idx curr-idx :counted counted :in in}
+        ;_ (println "init:" st)
+        ]
+    (canonical->list
+      (:in (first
+             (filter #(= (:counted %) 1)
+                     (iterate next-state-2 st)))))))
 
 (defn x-4 []
   (let [got-1 (canonical->list (canonical 1 8 3 2))
         expected-1 '(1 2 3 4 7 8)
         got-2 (canonical->list (canonical 2 7 1 3))
-        expected-2 '(2 3 7)]
+        expected-2 '(2 3 7)
+        got-3 (canonical->list (canonical 2 7))
+        expected-3 '(2 3 4 5 6 7)]
     (assert (= got-1 expected-1) (str got-1 ", " expected-1))
-    (assert (= got-2 expected-2) (str got-2 ", " expected-2))))
+    (assert (= got-2 expected-2) (str got-2 ", " expected-2))
+    (assert (= got-3 expected-3) (str got-3 ", " expected-3))))
 
 (defn x-5 []
   (assert (= [2 1] (get-grab '(1 2 3 5))))
   (assert (= [0 3] (get-grab '(3 7)))))
+
+(defn x-6 []
+  (let [in (range 1 (inc num-eleves))]
+    (assert (= in (canonical->list (canonical 1 num-eleves))))))
