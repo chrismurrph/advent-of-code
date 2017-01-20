@@ -13,7 +13,19 @@
       (swap! counter inc)
       true)))
 
+;;
+;; Returns the indexes that satisfy the predicate
+;;
 (defn indexes-by [f coll]
+  (->> coll
+       (map-indexed vector)
+       (filter (comp f second))
+       (map first)))
+
+;;
+;; Great way of ensuring don't have intermediate collections
+;;
+(defn indexes-by-fancy [f coll]
   (sequence
     (comp
       (map-indexed vector)
