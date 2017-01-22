@@ -1,4 +1,13 @@
 
+ITER {:curr-idx 0, :counted 8, :in (1 2 3 4 5 6 7 8)} will grab 4
+ITER {:curr-idx 1, :counted 7, :in (1 2 3 4 6 7 8)} will grab 4
+ITER {:curr-idx 2, :counted 6, :in (1 2 3 4 7 8)} will grab 5
+ITER {:curr-idx 3, :counted 5, :in (1 2 3 4 7)} will grab 0
+ITER {:curr-idx 4, :counted 4, :in (2 3 4 7)} will grab 2
+ITER {:curr-idx 5, :counted 3, :in (2 3 7)} will grab 0
+ITER {:curr-idx 6, :counted 2, :in (3 7)} will grab 1
+{:curr-idx 7, :counted 1, :in (3)}
+
 [;; a ends up with value (* 365 7) or 2555
  ;; b,c, and d are used as temporary variables
  ;; Actually d is initialised to initial value of a plus 2555
