@@ -254,3 +254,82 @@
 (defn x-6 []
   (let [in (range 1 (inc num-eleves))]
     (assert (= in (canonical->list (canonical 1 num-eleves))))))
+
+;;
+;; Bruce way now
+;; Interesting observation on his code is that there is no need to know where up to.
+;; Enough to draw down on the progress seq depending on whether state is even or odd.
+;;
+
+;;
+;; Ready to take from first in prog
+;; Needs to be sorted-set so when `seq` on it the seq will be in correct order for
+;; chomping on it.
+;;
+(defn make-start-st [s]
+  (let [st   (into (sorted-set) s)
+        op   (int (/ (count st) 2))
+        prog (drop op s)]
+    (println "st is size: " (count st))
+    (println "opp num is at: " op ", so size of prog:" (count prog))
+    [st prog]))
+
+;;
+;; After we have chomped thru the 2nd half we can chomp from the beginning of st
+;;
+(defn handle-empty [[st prog :as x]]
+  (if (empty? prog)
+    (do
+      ;(println "empty count" (count st))
+      [st (seq st)])
+    x))
+
+;;
+;; Choosing from the front of progress gives us a quick way to always be getting the opposite
+;;
+(defn drop-st* [[st progress :as x]]
+  (if (= 1 (count st))
+    x
+    [(disj st (first progress)) (drop 1 progress)]))
+
+(defn keep-1* [[st prog]] [st (drop 1 prog)])
+
+;;
+;; when completed doesn't do the f
+;;
+#_(defn skip-completed-dropping [f]
+  (fn [x] (if (= 1 (count (first x))) x (f x))))
+
+(def drop-st (comp drop-st* handle-empty))
+
+(def keep-1 (comp keep-1* handle-empty))
+
+#_(declare transition)
+
+;;
+;; With elves numbered 1->5 first count will be 5, so odd
+;; progress exists just for picking the next opposite to steal from
+;; Hence we remove 3 from the state, but 4 from the progress b/c next opposite is to be 5
+;; Anyway on recursive call to transition* st will now be even, and only left, 5, will be removed,
+;; then b/c empty st is put into prog and promptly has first removed.
+;; Next transition* 4 will be removed then only one left
+;;
+(defn transition* [[st progress :as x]]
+  ;(println "transition* with" x)
+  (if (odd? (count st))
+    (transition* (keep-1 (drop-st x)))
+    (keep-1 (drop-st (drop-st x)))))
+
+#_(def transition (skip-completed transition*))
+
+(defn find-answer2 [s]
+  (->> (iterate transition* (make-start-st s))
+       (filter #(= 1 (count (first %))))
+       first))
+
+(def bruce-input 3004953)
+(def my-input 3017957)
+(def test-input 5)
+
+(defn x-8 []
+  (time (find-answer2 (range 1 (inc my-input)))))
