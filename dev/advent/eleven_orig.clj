@@ -183,31 +183,6 @@
     (and (= e :F4)
          (= F1 F2 F3 #{}))))
 
-;(def stop-at 15)
-(def heavy? false)
-(defn my-pr-str [labs]
-  (if heavy?
-    (u/pp-str labs 100)
-    (str (count labs))))
-
-(defn breath-first-search [starting-lab generate-possible-moves destination-state?]
-  (loop [already-tested #{starting-lab}
-         last-round #{starting-lab}
-         total-visited 0
-         times 1]
-    (let [
-          ;where-at (remove already-tested last-round)
-          newly-generated (mapcat generate-possible-moves last-round)
-          _ (println (str "Generated " (my-pr-str newly-generated) " from " (my-pr-str last-round) " at " times))
-          got-there? (first (filter destination-state? newly-generated))]
-      ;(println (str "Newly generated: " (count newly-generated)))
-      (if got-there?
-        (let []
-          (println (str "Got there with: <" got-there? ">"))
-          times)
-        (let [now-tested (into already-tested newly-generated)]
-          (recur now-tested (into #{} (remove already-tested newly-generated)) (+ total-visited (count last-round)) (inc times)))))))
-
 ;;
 ;; Copied from thegeez: https://github.com/thegeez/clj-advent-of-code-2016
 ;; Mine above does the same. Actually needed to answer 2nd part of 13.

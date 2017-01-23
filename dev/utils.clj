@@ -16,7 +16,7 @@
 ;;
 ;; Returns the indexes that satisfy the predicate
 ;;
-(defn indexes-by [f coll]
+(defn -indexes-by [f coll]
   (->> coll
        (map-indexed vector)
        (filter (comp f second))
@@ -25,13 +25,18 @@
 ;;
 ;; Great way of ensuring don't have intermediate collections
 ;;
-(defn indexes-by-fancy [f coll]
+(defn indexes-by-fancy-1 [f coll]
   (sequence
     (comp
       (map-indexed vector)
       (filter (comp f second))
       (map first))
     coll))
+
+(defn indexes-by-fancy-2 [f coll]
+  (comment "Bet we can do it with a transducer too"))
+
+(def indexes-by -indexes-by)
 
 (defn get-now [] (.getTime (java.util.Date.)))
 
@@ -457,6 +462,13 @@
     :else (concat (mapv #(cons (first population) %) (combinations (rest population) (dec sz)))
                   (combinations (rest population) sz))))
 
+(defn permutations [s]
+  (lazy-seq
+    (if (seq (rest s))
+      (apply concat (for [x s]
+                      (map #(cons x %) (permutations (remove #{x} s)))))
+      [s])))
+
 (defn transpose
   "Transposes the given nested sequence into nested vectors, as
   in matrix transposition.  E.g., (transpose [[1 2 3] [4 5 6]])
@@ -496,3 +508,28 @@
          (map set)
          (apply clojure.set/intersection)
          (apply max))))
+
+;(def stop-at 15)
+(def heavy? false)
+(defn my-pr-str [labs]
+  (if heavy?
+    (pp-str labs 100)
+    (str (count labs))))
+
+(defn breath-first-search [starting-lab generate-possible-moves destination-state?]
+  (loop [already-tested #{starting-lab}
+         last-round #{starting-lab}
+         total-visited 0
+         times 1]
+    (let [
+          ;where-at (remove already-tested last-round)
+          newly-generated (mapcat generate-possible-moves last-round)
+          ;_ (println (str "Generated " (my-pr-str newly-generated) " from " (my-pr-str last-round) " at " times))
+          got-there? (first (filter destination-state? newly-generated))]
+      ;(println (str "Newly generated: " (count newly-generated)))
+      (if got-there?
+        (let []
+          ;(println (str "Got there with: <" got-there? ">"))
+          times)
+        (let [now-tested (into already-tested newly-generated)]
+          (recur now-tested (into #{} (remove already-tested newly-generated)) (+ total-visited (count last-round)) (inc times)))))))
