@@ -21,9 +21,8 @@
     [(rem idx width) (int (/ idx width))]))
 
 (defn whats-at [layout]
-  (let [width (-> layout first count)]
-    (fn [[x y :as coord]]
-      [coord (nth (nth layout y) x)])))
+  (fn [[x y :as coord]]
+    [coord (nth (nth layout y) x)]))
 
 (defn ch->int [ch]
   (u/string->int-not-strict (str ch)))
@@ -34,7 +33,10 @@
         indexes (u/indexes-by (comp u/string->int-not-strict str) as-str)
         ]
     (->> indexes
-         (map (fn [idx] [(ch->int (nth as-str idx)) [(rem idx width) (int (/ idx width))]]))
+         (map
+           (juxt #(ch->int (nth as-str %)) (juxt #(rem % width) #(int (/ % width))))
+           #_(fn [idx] [(ch->int (nth as-str idx)) [(rem idx width) (int (/ idx width))]])
+              )
          (sort-by first))))
 
 (defn x-4 []
@@ -142,7 +144,7 @@
   (least-steps false sample-distances [1 2 3 4]))
 
 (defn answer []
-  (let [solve-part-2? false
+  (let [solve-part-2? true
         layout actual-layout
         coords (all-numeric-coords layout)
         distances-map (create-distances layout coords)

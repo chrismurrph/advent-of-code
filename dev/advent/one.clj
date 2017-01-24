@@ -115,6 +115,12 @@
   (map (juxt first #(Integer/parseInt (apply str (rest %)))) d))
 
 ;;
+;; Shows that juxt not required - just gets rid of need for an argument
+;;
+(defn parse-data [d]
+  (map (fn [x] [(first x) (Integer/parseInt (apply str (rest x)))]) d))
+
+;;
 ;; Cumulative effect of all the lefts and rights can give us directions when realise that turning R 4 times is the
 ;; same as not having done any turning. Bruce is using cartesian coords here, as [0 1] is a move north, that corresponds
 ;; to 1 or 5 or 9. Directions are then repeated so R2 becomes [1 0] [1 0]. Interesting to see that `mapcat` works with
