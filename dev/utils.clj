@@ -24,6 +24,8 @@
 
 ;;
 ;; Great way of ensuring don't have intermediate collections
+;; sequence is 'lazy transduced'
+;; into [] is 'eager transduced'
 ;;
 (defn indexes-by-fancy-1 [f coll]
   (sequence
