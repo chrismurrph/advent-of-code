@@ -1,6 +1,7 @@
 (ns advent-2015.day05
   (:require [clojure.string :as s]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [utils :as u]))
 
 (defn enough-vowels-and-doubles [word]
   (loop [curr word
@@ -40,8 +41,47 @@
             ]
         (recur tail (conj pairs (str x y)) new-pair-satisfied? new-repeated-stradling?)))))
 
+(defn non-consecutive-pairs [word]
+  (some
+    (fn [[x & xs]] (some #(> (- % x) 1) xs))
+    (vals
+      (u/probe-on (apply merge-with concat
+                         (u/probe-on (map-indexed (fn [a b] {b [a]}) (partition 2 1 word))))))))
+
+;;
+;; Given a bunch of numnbers in order from lowest -> highest, is there one that isn't right next to the first
+;; some way is quicker b/c it short circuits the diff b/ween x and first that satisfies
+;; max is fine too, just has to go through them all.
+;;
+(defn non-consecutive [[x & xs]]
+  #_(> (- (apply max xs) x) 1)
+  (some #(> (- % x) 1) xs)
+  )
+
+;; merge-with always works with multiple maps
+;; we want to recognise the same key coming more than once
+;; normally merge will just choose the last
+;; merge-with allows this overwriting to be something else - so lets use concat for two vectors
+;; vals being greater than 1 would be the answer, except you'd get consequtive
+(defn my-non-consecutive-pairs [word]
+  (->> (apply merge-with concat (map-indexed (fn [a b] {b [a]}) (partition 2 1 word)))
+       vals
+       (some #(and (> (count %) 1) (non-consecutive %)))
+       ))
+
+;;
+;; Testing myself not resorting to recursion
+;;
+(defn nice-part-2-again [word]
+  (and
+    (my-non-consecutive-pairs word)
+    (some (fn [[x _ z]] (= x z)) (partition 3 1 word))))
+
 (defn x-3 []
-  (map nice-part-2 ["qjhvhtzxzqqjkmpb" "xxyxx" "uurcxstgmygtbstg" "ieodomkazucvgmuy"]))
+  (map nice-part-2-again (take 1 ["qjhvhtzxzqqjkmpb" "xxyxx" "uurcxstgmygtbstg" "ieodomkazucvgmuy"])))
+
+(defn x-4 []
+  (my-non-consecutive-pairs "aaaa" #_"qjhqqj"))
 
 (def input (line-seq (io/reader (io/resource "day05"))))
 
@@ -67,6 +107,6 @@
 
 (defn part-2 []
   (->> input
-       (map nice-part-2)
+       (map nice-part-2-again)
        (filter identity)
        count))

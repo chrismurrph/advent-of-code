@@ -4,10 +4,6 @@
 
 (def input (line-seq (io/reader (io/resource "day06"))))
 
-;;
-;; st is a vector of vector booleans
-;; lets make [0 0] be top left and [999 999] be bottom right
-;;
 (defn mk-state [value width height]
   (vec (repeat height (vec (repeat width value)))))
 
@@ -63,26 +59,23 @@
       ;(println "num:" (count coords))
       (case cmd
         "turn off"
-        (let []
-          (reduce turn-off st coords))
+        (reduce turn-off st coords)
         "turn on"
-        (let []
-          (reduce turn-on st coords))
+        (reduce turn-on st coords)
         "toggle"
-        (let []
-          (reduce toggle st coords))))))
+        (reduce toggle st coords)))))
 
 (defn part-1 []
-  (let [st (mk-state false 1000 1000)
-        commands (->> input
-                      (map parse-input)
-                      ;(take 4)
-                      )
-        new-st (reduce (do-cmd turn-off turn-on toggle) st commands)]
-    (->> new-st
-         flatten
-         (filter identity)
-         count)))
+  (time (let [st (mk-state false 1000 1000)
+              commands (->> input
+                            (map parse-input)
+                            ;(take 4)
+                            )
+              new-st (reduce (do-cmd turn-off turn-on toggle) st commands)]
+          (->> new-st
+               flatten
+               (filter identity)
+               count))))
 
 (defn part-2 []
   (let [st (mk-state 0 1000 1000)
