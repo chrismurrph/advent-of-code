@@ -70,8 +70,8 @@
 
 (defn finished? [st]
   (->> st
-       vals
        ;u/probe-on
+       vals
        (every? :value)
        ;u/probe-on
        ))
@@ -97,5 +97,24 @@
        vals
        (map (juxt :out :value))
        (some #(when (= 'a (first %)) %))))
+;; => 956
+
+;;
+;; Looking at the data b is never an output. Hence assoc is just adding another entry here
+;;
+(defn part-2-alteration [parsed-input]
+  (assoc parsed-input 'b {:cmd :assign :value 956 :out 'b}))
+
+(defn part-2 []
+  (->> (drop-while (complement finished?) (iterate next-state (part-2-alteration real-parsed-input)))
+       first
+       vals
+       (map (juxt :out :value))
+       (some #(when (= 'a (first %)) %))))
+
+(defn x-2 []
+  (take 2 (part-2-alteration real-parsed-input)))
+
+
 
 
