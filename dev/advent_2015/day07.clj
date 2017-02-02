@@ -7,9 +7,7 @@
   (line-seq (io/reader (io/resource filename))))
 
 (defn parse-connection [line]
-  (let [
-        ;_ (println line)
-        [a b c d e] line
+  (let [[a b c d e] line
         cmd (first (filter #{'RSHIFT 'LSHIFT 'NOT 'AND 'OR} line))]
     (if cmd
       (condp = cmd
@@ -25,17 +23,15 @@
        (map #(str "[" % "]"))
        (map read-string)
        u/probe-off
-       (map parse-connection)
-              ;(take 4)
-       ))
+       (map parse-connection)))
 
 (def test-parsed-input (into {} (map (juxt :out identity) (parse (input "day07_test")))))
 (def real-parsed-input (into {} (map (juxt :out identity) (parse (input "day07")))))
 
 (defn solve-param [solved acc param]
-  (let [res (if (number? param) param (some #(when (= (:out %) param) (:value %)) solved))]
-    (assert res (str "Not yet solved (maybe use acc) " param))
-    res))
+  (if (number? param)
+    param
+    (some #(when (= (:out %) param) (:value %)) solved)))
 
 (defn calc [cmd params]
   (condp = cmd
@@ -46,31 +42,39 @@
     'OR (apply bit-or params)))
 
 ;;
-;; Always returns an acc with the element that has come in, which was always a part of it, solved.
+;; Sometimes returns an acc with the element that has come in, which was always a part of it, solved.
 ;; By solved we mean that it has a :value.
+;; If can't yet be solved, just return acc. We can get it some future iteration
 ;;
 (defn solve [solved acc ele]
   (let [param-solver (partial solve-param solved acc)
-        ;_ (println ele)
         params (:params ele)
-        _ (assert params (str "No params in " ele))
-        param-values (map param-solver params)
-        _ (assert (every? (complement nil?) param-values))
-        res (calc (:cmd ele) param-values)
-        _ (assert res (str ele ", " (seq param-values) ", " res))
-        new-ele (assoc ele :value res)
         ]
-    (assoc acc (:out ele) new-ele)))
+    (if params
+      (let [param-values (map param-solver params)]
+        (if (every? (complement nil?) param-values)
+          (let [res (calc (:cmd ele) param-values)
+                new-ele (assoc ele :value res)]
+            (assoc acc (:out ele) new-ele))
+          acc))
+      (if (and (= (:cmd ele) :assign) (:value ele) (not (number? (:value ele))))
+        (let [param-value (param-solver (:value ele))]
+          (if param-value
+            (let [new-ele (assoc ele :value param-value)]
+              (assoc acc (:out ele) new-ele))
+            acc))
+        (assert false (str "No params nor assign in " ele))))))
 
 (defn solved? [x]
-  (:value x))
+  (number? (:value x)))
 
 (defn finished? [st]
   (->> st
        vals
-       u/probe-on
+       ;u/probe-on
        (every? :value)
-       u/probe-on))
+       ;u/probe-on
+       ))
 
 (defn solver [solved]
   (let [my-solver (partial solve solved)]
@@ -79,21 +83,19 @@
 
 (defn next-state [out-map]
   (let [pre-solved (->> out-map vals (filter (fn [x] (solved? x))))
-        my-solver (solver pre-solved)
-        ]
+        my-solver (solver pre-solved)]
     (my-solver out-map)))
 
 (defn x-1 []
   (->> (next-state test-parsed-input)
        vals
-       (map (juxt :out :value))
-       ))
+       (map (juxt :out :value))))
 
-(defn x-2 []
+(defn part-1 []
   (->> (drop-while (complement finished?) (iterate next-state real-parsed-input))
        first
        vals
        (map (juxt :out :value))
-       ))
+       (some #(when (= 'a (first %)) %))))
 
 
