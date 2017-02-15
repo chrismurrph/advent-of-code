@@ -1,7 +1,8 @@
 (ns fastmail.contacts-import
   (:require [clojure.java.io :as io]
             [clojure.string :as s]
-            [clojure.set :refer [difference union intersection]]))
+            [clojure.set :refer [difference union intersection]]
+            [utils :as u]))
 
 (def real-file-name "fastmail_import.csv")
 (def test-import "test_import")
@@ -17,7 +18,7 @@
 
 (defn blank? [value] (or (nil? value) (= "" value)))
 ;(defn only-non-letters? [value] (re-find #" *" value))
-(defn every-char-special? [value] (every? #{\* (first " ")} value))
+(defn every-char-special? [value] (every? #{\* \space} value))
 
 ;;
 ;; There are ignores for each from-heading.
@@ -37,16 +38,14 @@
 
 (def candidate-headings (merge perfect-headings
                                {
-                                "Name" "First Name"
                                 "Given Name" "First Name"
-                                "Given Name Yomi" "First Name"
                                 "Additional Name" "Nick Name"
                                 "Family Name" "Last Name"
                                 "Name Prefix" "Title"
                                 "Birthday" "Birthday"
                                 "Organization 1 - Name" "Company"
                                 "Organization 1 - Department" "Department"
-                                "Organization 1 - Title" "Job Title"
+                                ;"Organization 1 - Title" "Job Title"
                                 "Address 1 - Street" "Home Street"
                                 "Address 1 - City" "Home City"
                                 "Address 1 - Region" "Home State"
@@ -65,15 +64,16 @@
                                 "Organization 1 - Yomi Name" "Business Street 2"
                                 "Phone 4 - Value" "Business Phone"
                                 "Phone 1 - Value" "Home Phone"
-                                "Organization 1 - Symbol" "Business City"
+                                ;"Organization 1 - Symbol" "Business City"
                                 "Organization 1 - Job Description" "Business State"
-                                "Yomi Name" "Last Name"
-                                "Website 1 - Type" "Business Postal Code"
-                                "Website 1 - Value" "Company"
+                                ;"Yomi Name" "Last Name"
+                                ;"Website 1 - Type" "Business Postal Code"
+                                ;"Website 1 - Value" "Company"
                                 "Name Suffix" "Job Title"
-                                "Initials" "Nick Name"
+                                ;"Initials" "Nick Name"
                                 "Organization 1 - Location" "Business City"
-                                "Additional Name Yomi" "Home Postal Code"
+                                ;"Additional Name Yomi" "Home Postal Code"
+                                ;"Family Name Yomi" "Last Name"
                                 }))
 
 (let [trans-to-headings (-> candidate-headings vals set)
@@ -97,6 +97,20 @@
                        "Sensitivity"
                        "Priority"
                        "Subject"
+                       "Name"
+                       "Initials"
+                       "Yomi Name"
+                       "Additional Name Yomi"
+                       "Family Name Yomi"
+                       "Given Name Yomi"
+                       "Organization 1 - Symbol"
+                       "Website 1 - Type"
+                       "Website 1 - Value"
+                       "Organization 1 - Title"
+                       "Nickname"
+                       "Gender"
+                       "Short Name"
+                       "Maiden Name"
                        })
 
 (let [in-common (intersection ignore-headings (-> candidate-headings keys set))]
@@ -111,6 +125,27 @@
         {:cell/from from-heading :cell/to to-heading :cell/value value}
         {:cell/from from-heading :cell/value value}))))
 
+(defn organise-row [make-translated-f populated-headings]
+  (->> populated-headings
+       (mapv make-translated-f)
+       ;u/probe-on
+       (group-by #((complement nil?) (:cell/to %)))
+       (map (fn [[k v]] (if k [:translateds v] [:not-translateds v])))
+       (into {})))
+
+(defn bad? [freqs]
+  (when (seq freqs)
+    (let [max-freq (apply max (vals freqs))]
+      (> max-freq 1))))
+
+(defn check-dups [row]
+  (let [tos (map :cell/to (:translateds row))
+        bad-row? (-> tos
+                     frequencies
+                     bad?)]
+    (when bad-row?
+      (println (str "BAD row: " (:translateds row))))))
+
 (defn row-reader-hof [headings-from-to]
   (let [make-translated-f (make-translated headings-from-to)
         from-headings (->> headings-from-to
@@ -121,12 +156,10 @@
                                     (map vector from-headings)
                                     (filter (fn [[from-heading value]]
                                               (let [preds (map complement (assemble-ignores from-heading))]
-                                                ((apply every-pred preds) value)))))]
-        (->> populated-headings
-             (mapv make-translated-f)
-             (group-by #((complement nil?) (:cell/to %)))
-             (map (fn [[k v]] (if k [:translateds v] [:not-translateds v])))
-             (into {}))))))
+                                                ((apply every-pred preds) value)))))
+            organised-row (organise-row make-translated-f populated-headings)
+            _ (check-dups organised-row)]
+        organised-row))))
 
 (defn score-at [headings-type-kw headings]
   (let [_ (println (str "head: " (seq headings)))
@@ -150,7 +183,7 @@
 (defn split-by-comma [x]
   (s/split x #","))
 
-(defn x-1 []
+(defn non-translateds []
   (let [[headings-str & lines-strs] (get-input-lines my-file-name)
         headings (s/split headings-str #",")
         translated-headings (map candidate-headings headings)
@@ -166,27 +199,3 @@
          (take 5)
          )))
 
-(defn x-2 []
-  (let [lines-strs (get-input-lines my-file-name)
-        sz (-> lines-strs first split-by-comma count)
-        lines (for [line-str lines-strs]
-                (pad (split-by-comma line-str) sz))
-        ;actual-headings (first lines)
-        ;_ (println (filter #(.startsWith (.toLowerCase %) "e-mail") actual-headings))
-        ;_ (println headings)
-        heading-leading (transpose-1 lines)
-        actual-headings (map first heading-leading)
-        with-substance (filter heading-has-data? actual-headings)
-        ;_ (println (map-indexed vector (map first with-substance)))
-        _ (println (str "Down from " (count heading-leading) " to "
-                        (count with-substance) " to "
-                        (count (score-at :my-google with-substance)) " or "
-                        (count (score-at :perfect with-substance))))
-        m (into {} (map (juxt first #(-> % rest vec)) with-substance))
-        ]
-    ;(mapv m ["Given Name" "Given Name Yomi"])
-    (score-at :my-google with-substance)
-    ))
-
-(defn x-3 []
-  (pad [1 2 3] 10))
