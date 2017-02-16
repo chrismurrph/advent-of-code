@@ -8,7 +8,7 @@
 (def test-import "test_import")
 (def my-file-name real-file-name)
 
-(def doco-headings #{"Title","First Name","Last Name","Nick Name","Company","Department","Job Title","Business Street",
+(def target-headings #{"Title","First Name","Last Name","Nick Name","Company","Department","Job Title","Business Street",
                      "Business Street 2","Business City","Business State","Business Postal Code","Business Country",
                      "Home Street","Home Street 2","Home City","Home State","Home Postal Code","Home Country",
                      "Other Street","Other Street 2","Other City","Other State","Other Postal Code","Other Country",
@@ -28,16 +28,16 @@
 ;; be altered by the user.
 ;; Obviously we only know the from-heading when given the file to import.
 ;;
-(defn assemble-ignores [from-heading]
+(defn assemble-cell-ignores [from-heading]
   [blank? every-char-special?])
 
 ;;
-;; Here heading we actually get can be mapped to to one of the doco headings
+;; Here heading we actually get can be mapped to one of the doco headings
 ;;
-(def perfect-headings (into {} (map (juxt identity identity) doco-headings)))
+(def perfect-translations (into {} (map (juxt identity identity) target-headings)))
 
-(def candidate-headings (merge perfect-headings
-                               {
+(def heading-translations (merge perfect-translations
+                                 {
                                 "Given Name" "First Name"
                                 "Additional Name" "Nick Name"
                                 "Family Name" "Last Name"
@@ -76,10 +76,13 @@
                                 ;"Family Name Yomi" "Last Name"
                                 }))
 
-(let [trans-to-headings (-> candidate-headings vals set)
-      inventeds (difference trans-to-headings doco-headings)]
+(let [trans-to-headings (-> heading-translations vals set)
+      inventeds (difference trans-to-headings target-headings)]
   (assert (= #{} inventeds) (str "Can't make up a Fastmail heading: " (first inventeds))))
 
+;;
+;; Ones there's no mapping to, that we will loose the data of
+;;
 (def ignore-headings #{"Group Membership"
                        "Phone 1 - Type"
                        "Address 1 - Type"
@@ -113,7 +116,7 @@
                        "Maiden Name"
                        })
 
-(let [in-common (intersection ignore-headings (-> candidate-headings keys set))]
+(let [in-common (intersection ignore-headings (-> heading-translations keys set))]
   (assert (= #{} in-common) (str "Can't ignore and have a translate for: " (first in-common))))
 
 (defn make-translated [headings-from-to]
@@ -133,7 +136,7 @@
        (map (fn [[k v]] (if k [:translateds v] [:not-translateds v])))
        (into {})))
 
-(defn bad? [freqs]
+(defn overwritten-column? [freqs]
   (when (seq freqs)
     (let [max-freq (apply max (vals freqs))]
       (> max-freq 1))))
@@ -142,28 +145,39 @@
   (let [tos (map :cell/to (:translateds row))
         bad-row? (-> tos
                      frequencies
-                     bad?)]
+                     overwritten-column?)]
     (when bad-row?
-      (println (str "BAD row: " (:translateds row))))))
+      (println (str "Duplicated column in row: " (:translateds row))))))
 
 (defn row-reader-hof [headings-from-to]
-  (let [make-translated-f (make-translated headings-from-to)
-        from-headings (->> headings-from-to
-                           (map first)
-                           (remove ignore-headings))]
+  (let [_ (println "orig size: " (count headings-from-to))
+        make-translated-f (make-translated headings-from-to)
+        all-from-headings (map first headings-from-to)
+        from-headings (remove ignore-headings all-from-headings)
+        accepted-positions (utils/positions (set from-headings) all-from-headings)
+        _ (println "positions: " accepted-positions)
+        ]
+    (assert (= (- (count headings-from-to) (count ignore-headings)) (count from-headings)))
     (fn read-row [row-data]
-      (let [populated-headings (->> row-data
-                                    (map vector from-headings)
-                                    (filter (fn [[from-heading value]]
-                                              (let [preds (map complement (assemble-ignores from-heading))]
-                                                ((apply every-pred preds) value)))))
-            organised-row (organise-row make-translated-f populated-headings)
-            _ (check-dups organised-row)]
-        organised-row))))
+      (let [_ (println (count row-data))
+            _ (println row-data)
+            ;accepted-row (map row-data accepted-positions)
+            ;_ (println accepted-row)
+            rows-sz (count row-data)
+            headings-sz (count from-headings)]
+        (assert (= rows-sz headings-sz) (str rows-sz " not= " headings-sz))
+        (let [populated-headings (->> row-data
+                                      (map vector from-headings)
+                                      (filter (fn [[from-heading value]]
+                                                (let [preds (map complement (assemble-cell-ignores from-heading))]
+                                                  ((apply every-pred preds) value)))))
+              organised-row (organise-row make-translated-f populated-headings)
+              _ (check-dups organised-row)]
+          organised-row)))))
 
 (defn score-at [headings-type-kw headings]
   (let [_ (println (str "head: " (seq headings)))
-        good-paths (->> candidate-headings headings-type-kw (map first) set)]
+        good-paths (->> heading-translations headings-type-kw (map first) set)]
     (intersection (set headings) good-paths)))
 
 (defn get-input-lines [file-name]
@@ -180,16 +194,52 @@
   (let [diff (- n (count xs))]
     (vec (concat xs (repeat diff nil)))))
 
-(defn split-by-comma [x]
+(defn split-by-comma-simple [x]
   (s/split x #","))
 
+(defn finished? [{:keys [rest-line]}]
+  (empty? rest-line))
+
+(defn step [{:keys [rest-line curr-position comma-positions in-quote?]}]
+  (let [curr-val (first rest-line)
+        new-in-quote (if (= curr-val \")
+                       (not in-quote?)
+                       in-quote?)
+        new-comma-positions (if (and (not in-quote?) (= curr-val \,))
+                              (conj comma-positions curr-position)
+                              comma-positions)]
+    {:rest-line (rest rest-line)
+     :curr-position (inc curr-position)
+     :comma-positions new-comma-positions
+     :in-quote? new-in-quote}))
+
+(defn append-ending [x positions]
+  (conj positions (count x)))
+
+(defn split-by-comma [x]
+  (let [init-state {:rest-line x
+                    :curr-position 0
+                    :comma-positions []
+                    :in-quote? false}]
+    (->> (drop-while (complement finished?) (iterate step init-state))
+         first
+         :comma-positions
+         (append-ending x)
+         (into [-1])
+         (partition 2 1)
+         (map (fn [[y z]] (subs x (inc y) z)))
+         )))
+
+;;
+;; Need to keep putting on ignores and translates, until an empty coll is returned
+;;
 (defn non-translateds []
   (let [[headings-str & lines-strs] (get-input-lines my-file-name)
         headings (s/split headings-str #",")
-        translated-headings (map candidate-headings headings)
+        translated-headings (map heading-translations headings)
         headings-from-to (mapv vector headings translated-headings)
         lines (for [line-str lines-strs]
-                (s/split line-str #","))
+                (split-by-comma line-str))
         row-reader-f (row-reader-hof headings-from-to)
         ]
     (->> lines
