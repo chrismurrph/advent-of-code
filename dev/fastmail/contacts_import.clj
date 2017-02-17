@@ -4,9 +4,17 @@
             [clojure.set :refer [difference union intersection]]
             [utils :as u]))
 
-(def real-file-name "fastmail_import.csv")
+;;
+;; raw file saved directly to your HD from google, then need to use dos2unix on it
+;; file -bi google_export.csv
+;; text/plain; charset=utf-16le
+;; After dos2unix:
+;; text/plain; charset=utf-8
+;;
+(def real-file-name-2 "google_export.csv")
+(def real-file-name-1 "fastmail_import.csv")
 (def test-import "test_import")
-(def my-file-name real-file-name)
+(def my-file-name real-file-name-2)
 
 (def target-headings #{"Title","First Name","Last Name","Nick Name","Company","Department","Job Title","Business Street",
                      "Business Street 2","Business City","Business State","Business Postal Code","Business Country",
@@ -89,8 +97,8 @@
                        "E-mail 1 - Type"
                        "Phone 2 - Type"
                        "Phone 3 - Type"
-                       "E-mail 3 - Type"
-                       "E-mail 3 - Value"
+                       ;"E-mail 3 - Type"
+                       ;"E-mail 3 - Value"
                        "Billing Information"
                        "Directory Server"
                        "Mileage"
@@ -106,10 +114,10 @@
                        "Additional Name Yomi"
                        "Family Name Yomi"
                        "Given Name Yomi"
-                       "Organization 1 - Symbol"
+                       ;"Organization 1 - Symbol"
                        "Website 1 - Type"
                        "Website 1 - Value"
-                       "Organization 1 - Title"
+                       ;"Organization 1 - Title"
                        "Nickname"
                        "Gender"
                        "Short Name"
@@ -152,21 +160,26 @@
 (defn row-reader-hof [headings-from-to]
   (let [_ (println "orig size: " (count headings-from-to))
         make-translated-f (make-translated headings-from-to)
-        all-from-headings (map first headings-from-to)
+        all-from-headings (mapv first headings-from-to)
+        _ (println (str "all-from-headings: " all-from-headings))
+        _ (println (str "ignore-headings: " ignore-headings))
         from-headings (remove ignore-headings all-from-headings)
         accepted-positions (utils/positions (set from-headings) all-from-headings)
         _ (println "positions: " accepted-positions)
+        [from-to-sz ignore-sz from-sz] (map count [headings-from-to ignore-headings from-headings])
         ]
-    (assert (= (- (count headings-from-to) (count ignore-headings)) (count from-headings)))
+    (assert (= (- from-to-sz ignore-sz) from-sz)
+            (str "S/have ended up with " (- from-to-sz ignore-sz) ", but remove of " ignore-sz " didn't work as left with: " from-sz))
     (fn read-row [row-data]
-      (let [_ (println (count row-data))
-            _ (println row-data)
-            ;accepted-row (map row-data accepted-positions)
-            ;_ (println accepted-row)
-            rows-sz (count row-data)
+      (let [
+            _ (println (str "row size: " (count row-data)))
+            _ (println (str "<" (seq row-data) ">"))
+            accepted-row (map (vec row-data) accepted-positions)
+            _ (println accepted-row)
+            rows-sz (count accepted-row)
             headings-sz (count from-headings)]
         (assert (= rows-sz headings-sz) (str rows-sz " not= " headings-sz))
-        (let [populated-headings (->> row-data
+        (let [populated-headings (->> accepted-row
                                       (map vector from-headings)
                                       (filter (fn [[from-heading value]]
                                                 (let [preds (map complement (assemble-cell-ignores from-heading))]
@@ -181,7 +194,9 @@
     (intersection (set headings) good-paths)))
 
 (defn get-input-lines [file-name]
-  (line-seq (io/reader (io/resource file-name))))
+  ;(line-seq (io/reader (io/resource file-name)))
+  (s/split-lines (slurp (io/resource file-name) :encoding "UTF-8" #_"ASCII"))
+  )
 
 (defn transpose-1 [xss]
   (assert (= (count (first xss)) (count (second xss)) (count (#(nth % 2) xss))))
@@ -230,12 +245,20 @@
          (map (fn [[y z]] (subs x (inc y) z)))
          )))
 
+(defn check-all-ignoreds-exist [headings]
+  (let [diff (clojure.set/difference ignore-headings (set headings))
+        ;_ (println "DIFF" diff)
+        okay? (= #{} diff)]
+    (assert okay? (str "These ignored headings don't exist, so don't need to be on ignored list: " diff))))
+
 ;;
 ;; Need to keep putting on ignores and translates, until an empty coll is returned
 ;;
 (defn non-translateds []
   (let [[headings-str & lines-strs] (get-input-lines my-file-name)
-        headings (s/split headings-str #",")
+        headings (mapv s/trim (s/split headings-str #","))
+        _ (println (str "headings: " headings))
+        _ (check-all-ignoreds-exist headings)
         translated-headings (map heading-translations headings)
         headings-from-to (mapv vector headings translated-headings)
         lines (for [line-str lines-strs]
