@@ -394,12 +394,12 @@
   ([x]
    (when *assert*
      `(when-not ~x
-        (sleep 30)
+        (sleep 200)
         (throw (new AssertionError (str "Assert failed: " (pr-str '~x)))))))
   ([x message]
    (when *assert*
      `(when-not ~x
-        (sleep 30)
+        (sleep 200)
         (throw (new AssertionError (str "Assert failed: " ~message "\n" (pr-str '~x))))))))
 
 (defn ends-with? [s ending]

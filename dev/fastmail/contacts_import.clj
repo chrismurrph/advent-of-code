@@ -10,11 +10,13 @@
 ;; text/plain; charset=utf-16le
 ;; After dos2unix:
 ;; text/plain; charset=utf-8
+;; Note visible only in vi, text editors see gobeldy-gook
 ;;
 (def real-file-name-2 "google_export.csv")
 (def real-file-name-1 "fastmail_import.csv")
 (def test-import "test_import")
 (def my-file-name real-file-name-2)
+(def ignore-ignores? (= my-file-name test-import))
 
 (def target-headings #{"Title","First Name","Last Name","Nick Name","Company","Department","Job Title","Business Street",
                      "Business Street 2","Business City","Business State","Business Postal Code","Business Country",
@@ -97,8 +99,6 @@
                        "E-mail 1 - Type"
                        "Phone 2 - Type"
                        "Phone 3 - Type"
-                       ;"E-mail 3 - Type"
-                       ;"E-mail 3 - Value"
                        "Billing Information"
                        "Directory Server"
                        "Mileage"
@@ -114,10 +114,8 @@
                        "Additional Name Yomi"
                        "Family Name Yomi"
                        "Given Name Yomi"
-                       ;"Organization 1 - Symbol"
                        "Website 1 - Type"
                        "Website 1 - Value"
-                       ;"Organization 1 - Title"
                        "Nickname"
                        "Gender"
                        "Short Name"
@@ -168,17 +166,17 @@
         _ (println "positions: " accepted-positions)
         [from-to-sz ignore-sz from-sz] (map count [headings-from-to ignore-headings from-headings])
         ]
-    (assert (= (- from-to-sz ignore-sz) from-sz)
+    (assert (or ignore-ignores? (= (- from-to-sz ignore-sz) from-sz))
             (str "S/have ended up with " (- from-to-sz ignore-sz) ", but remove of " ignore-sz " didn't work as left with: " from-sz))
     (fn read-row [row-data]
-      (let [
-            _ (println (str "row size: " (count row-data)))
-            _ (println (str "<" (seq row-data) ">"))
-            accepted-row (map (vec row-data) accepted-positions)
-            _ (println accepted-row)
+      ;(println (str "row size: " (count row-data)))
+      ;(println (str "<" (seq row-data) ">"))
+      (assert (= (count row-data) (count headings-from-to)) (str "headings: " (count headings-from-to) ", row-data: " (count row-data)))
+      (let [accepted-row (map (vec row-data) accepted-positions)
+            ;_ (println accepted-row)
             rows-sz (count accepted-row)
             headings-sz (count from-headings)]
-        (assert (= rows-sz headings-sz) (str rows-sz " not= " headings-sz))
+        (u/assrt (= rows-sz headings-sz) (str rows-sz " not= " headings-sz))
         (let [populated-headings (->> accepted-row
                                       (map vector from-headings)
                                       (filter (fn [[from-heading value]]
@@ -231,11 +229,14 @@
 (defn append-ending [x positions]
   (conj positions (count x)))
 
-(defn split-by-comma [x]
+;;
+;; More complex because we don't count commas within quotes
+;;
+(defn split-by-comma [init-in-quote? x]
   (let [init-state {:rest-line x
                     :curr-position 0
                     :comma-positions []
-                    :in-quote? false}]
+                    :in-quote? init-in-quote?}]
     (->> (drop-while (complement finished?) (iterate step init-state))
          first
          :comma-positions
@@ -248,8 +249,41 @@
 (defn check-all-ignoreds-exist [headings]
   (let [diff (clojure.set/difference ignore-headings (set headings))
         ;_ (println "DIFF" diff)
-        okay? (= #{} diff)]
+        okay? (or (= #{} diff) ignore-ignores?)]
     (assert okay? (str "These ignored headings don't exist, so don't need to be on ignored list: " diff))))
+
+;;
+;; Normal concatenation won't work as the line that opened the quote was not known about when did
+;; the second line, so the commas were not seen. Hence we do the splitting by commas operation again
+;;
+(defn -concat [x y]
+  (if (= \" (-> x last first))
+    (concat (butlast x) (split-by-comma false (apply str (cons (str (last x) ", ") y))))
+    (concat x y)))
+
+(defn maybe-join [num-headings [x y]]
+  (let [x-sz (count x)
+        y-sz (count y)]
+    (cond
+      (= num-headings x-sz y-sz) y
+      (and (< x-sz num-headings) (< y-sz num-headings)) (u/probe-on (-concat x y) "PRBE")
+      (= num-headings x-sz) x
+      (= num-headings y-sz) y)))
+
+(defn desc [cells]
+  (if (> (count cells) 5)
+    (last cells)
+    cells))
+
+;;
+;; Even with the raw exported file (post dos2unix) some lines are too short, spilling onto the next line.
+;; So here we recognise them and join them together
+;;
+(defn join-short-lines [expected-sz lines-strs]
+  (println (str "counts: " (vec (remove #(= (second %) expected-sz) (map-indexed (fn [idx line] [idx (count line) (desc line)]) lines-strs)))))
+  (->> (cons (repeat expected-sz "") lines-strs)
+       (partition 2 1)
+       (map (partial maybe-join expected-sz))))
 
 ;;
 ;; Need to keep putting on ignores and translates, until an empty coll is returned
@@ -261,11 +295,12 @@
         _ (check-all-ignoreds-exist headings)
         translated-headings (map heading-translations headings)
         headings-from-to (mapv vector headings translated-headings)
-        lines (for [line-str lines-strs]
-                (split-by-comma line-str))
         row-reader-f (row-reader-hof headings-from-to)
+        lines (for [line-str lines-strs]
+                (split-by-comma false line-str))
         ]
     (->> lines
+         (join-short-lines (count headings))
          (map #(row-reader-f %))
          (filter :not-translateds)
          (map :not-translateds)
