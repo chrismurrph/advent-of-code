@@ -16,7 +16,7 @@
 (def real-file-name-1 "fastmail_import.csv")
 (def real-file real-file-name-2)
 (def test-import "test_import")
-(def my-input-file-name test-import)
+(def my-input-file-name real-file-name-2)
 (def my-output-file-name "output.txt")
 
 ;; Ignores used here won't apply to other situations
@@ -344,8 +344,22 @@
              transpose
              )))))
 
+;;
+;; (->> old-data
+;; (map change-line)
+;; (interpose \newline)
+;; (apply str)
+;; (spit "output.txt"))
+;;
 (defn write-to-file [file-name records]
-  (map (partial interpose ",") records))
+  (let [string-lines (map #(->> %
+                                (interpose ",")
+                                (apply str))
+                          records)]
+    (->> string-lines
+         (interpose \newline)
+         (apply str)
+         (spit file-name))))
 
 (defn x-1 []
   (->> my-input-file-name
