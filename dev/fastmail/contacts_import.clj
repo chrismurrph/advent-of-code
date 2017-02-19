@@ -54,12 +54,12 @@
 ;;
 (def perfect-translations (into {} (map (juxt identity identity) target-headings)))
 
-;; Name,Given Name,Additional Name,Family Name
 (def test-file-translations {"Informal Name" "Name",
                              "First Name"    "Given Name",
                              ;"Slurr" "Additional Name",
                              "Surname"       "Family Name"})
 (def real-file-translations {
+                             ;;=> "Name"                             "Company"
                              "Given Name"                       "First Name"
                              "Additional Name"                  "Nick Name"
                              "Family Name"                      "Last Name"
@@ -67,16 +67,13 @@
                              "Birthday"                         "Birthday"
                              "Organization 1 - Name"            "Company"
                              "Organization 1 - Department"      "Department"
-                             ;"Organization 1 - Title" "Job Title"
                              "Address 1 - Street"               "Home Street"
                              "Address 1 - City"                 "Home City"
                              "Address 1 - Region"               "Home State"
                              "Address 1 - Postal Code"          "Home Postal Code"
                              "Address 1 - Country"              "Home Country"
                              "E-mail 1 - Value"                 "E-mail Address"
-                             ;"Address 1 - Formatted" "Home Street"
                              "Address 1 - PO Box"               "Home Street 2"
-                             ;"E-mail 2 - Type" "E-mail Address"
                              "Phone 2 - Value"                  "Home Phone 2"
                              "E-mail 2 - Value"                 "E-mail 2 Address"
                              "Address 1 - Extended Address"     "Home Street 2"
@@ -86,16 +83,10 @@
                              "Organization 1 - Yomi Name"       "Business Street 2"
                              "Phone 4 - Value"                  "Business Phone"
                              "Phone 1 - Value"                  "Home Phone"
-                             ;"Organization 1 - Symbol" "Business City"
                              "Organization 1 - Job Description" "Business State"
-                             ;"Yomi Name" "Last Name"
-                             ;"Website 1 - Type" "Business Postal Code"
-                             ;"Website 1 - Value" "Company"
                              "Name Suffix"                      "Job Title"
-                             ;"Initials" "Nick Name"
                              "Organization 1 - Location"        "Business City"
-                             ;"Additional Name Yomi" "Home Postal Code"
-                             ;"Family Name Yomi" "Last Name"
+                             ;;=> "Website 1 - Value"                "Web Page"
                              })
 
 (def translations (if test-file? test-file-translations real-file-translations))
@@ -128,14 +119,14 @@
       "Sensitivity"
       "Priority"
       "Subject"
-      "Name"
+      ;;=> "Name"
+      ;;=> "Website 1 - Value"
       "Initials"
       "Yomi Name"
       "Additional Name Yomi"
       "Family Name Yomi"
       "Given Name Yomi"
       "Website 1 - Type"
-      "Website 1 - Value"
       "Nickname"
       "Gender"
       "Short Name"
@@ -154,13 +145,16 @@
         {:cell/from from-heading :cell/to to-heading :cell/value value}
         {:cell/from from-heading :cell/value value}))))
 
-(defn organise-row [make-translated-f populated-headings]
-  (->> populated-headings
-       (mapv make-translated-f)
-       ;u/probe-on
-       (group-by #((complement nil?) (:cell/to %)))
-       (map (fn [[k v]] (if k [:translateds v] [:not-translateds v])))
-       (into {})))
+(defn organise-row [make-translated-f value-populated-headings row-num]
+  (let [accepted-count (count value-populated-headings)]
+    (if (zero? accepted-count)
+      {:row-num row-num :accepted-count accepted-count}
+      (->> value-populated-headings
+           (mapv make-translated-f)
+           ;u/probe-on
+           (group-by #((complement nil?) (:cell/to %)))
+           (map (fn [[k v]] (if k [:translateds v] [:not-translateds v])))
+           (into {:row-num row-num :accepted-count accepted-count})))))
 
 (defn overwritten-column? [freqs]
   (when (seq freqs)
@@ -175,6 +169,10 @@
     (when bad-row?
       (println (str "Duplicated column in row: " (:translateds row))))))
 
+(defn not-rubbish? [[from-heading cell-value]]
+  (let [preds (map complement (assemble-cell-ignores from-heading))]
+    ((apply every-pred preds) cell-value)))
+
 (defn row-reader-hof [headings-from-to]
   (let [_ (println "orig size: " (count headings-from-to))
         make-translated-f (make-translated headings-from-to)
@@ -188,21 +186,20 @@
         ]
     (assert (or test-file? (= (- from-to-sz ignore-sz) from-sz))
             (str "S/have ended up with " (- from-to-sz ignore-sz) ", but remove of " ignore-sz " didn't work as left with: " from-sz))
-    (fn read-row [row-data]
+    (fn read-row [row-num row-data]
       ;(println (str "row size: " (count row-data)))
-      ;(println (str "<" (seq row-data) ">"))
+      ;(println (str "<" (seq row-data) ">, row-num: " row-num))
       (assert (= (count row-data) (count headings-from-to)) (str "headings: " (count headings-from-to) ", row-data: " (count row-data)))
       (let [accepted-row (map (vec row-data) accepted-positions)
             ;_ (println accepted-row)
             rows-sz (count accepted-row)
             headings-sz (count from-headings)]
         (u/assrt (= rows-sz headings-sz) (str rows-sz " not= " headings-sz))
-        (let [populated-headings (->> accepted-row
-                                      (map vector from-headings)
-                                      (filter (fn [[from-heading value]]
-                                                (let [preds (map complement (assemble-cell-ignores from-heading))]
-                                                  ((apply every-pred preds) value)))))
-              organised-row (organise-row make-translated-f populated-headings)
+        (let [value-populated-headings (->> accepted-row
+                                            (map vector from-headings)
+                                            (filter not-rubbish?))
+              ;_ (println (str "row " row-num " reduced from " (count accepted-row) " to " (count value-populated-headings)))
+              organised-row (organise-row make-translated-f value-populated-headings row-num)
               _ (check-dups organised-row)]
           organised-row)))))
 
@@ -314,15 +311,34 @@
 
 ;;
 ;; Need to keep putting on ignores and translates, until an empty coll is returned
+;; For every line a check is done that a non-blank cell value is either translated or ignored
 ;;
 (defn non-translateds [headings-from-to lines]
   (let [row-reader-f (row-reader-hof headings-from-to)]
     (->> lines
-         (map #(row-reader-f %))
-         (filter :not-translateds)
-         (map :not-translateds)
+         (map-indexed vector)
+         (map (fn [idx row-data] (row-reader-f idx row-data)))
+         (filter #(-> % second :not-translateds))
+         (map #(-> second :not-translateds))
          (take 5)
          )))
+
+(defn empties [headings-from-to lines]
+  (let [row-reader-f (row-reader-hof headings-from-to)]
+    (->> lines
+         (map-indexed vector)
+         (map (fn [[idx row-data]] (row-reader-f idx row-data)))
+         (filter #(and (-> % :accepted-count pos?) (-> % :translateds empty?)))
+         ;(map #(nth lines (:row-num %)))
+         )))
+
+;;
+;; A completely blank input line, resulting in completely blank output line is not a problem,
+;; because problems are those that can be fixed by changing translation and ignores.
+;;
+(defn all-blank? [row]
+  (every? #(= % "") row)
+  )
 
 (defn translate [string-lines]
   (let [[headings-str & lines-strs] string-lines
@@ -334,14 +350,15 @@
         lines' (for [line-str lines-strs]
                  (split-by-comma false line-str))
         lines (join-short-lines (count headings-from-to) lines')]
-    (let [problems (non-translateds headings-from-to lines)]
+    (let [problems (empties headings-from-to lines)]
       (if (seq problems)
-        problems
+        ["PROBLEMS" problems]
         (->> lines
              (cons translated-headings)
              transpose
              (remove #(nil? (first %)))
              transpose
+             (remove all-blank?)
              )))))
 
 ;;
@@ -365,6 +382,6 @@
   (->> my-input-file-name
        get-input-lines
        translate
-       (write-to-file my-output-file-name)
+       ;(write-to-file my-output-file-name)
        ))
 
