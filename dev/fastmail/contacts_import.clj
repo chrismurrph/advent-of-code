@@ -323,13 +323,18 @@
          (take 5)
          )))
 
+;;
+;; Ignore too much and you will get a completely blank row
+;; Combine with above by filtering for both, ending with this filter
+;; Outside we can show the user one problem at a time.
+;;
 (defn empties [headings-from-to lines]
   (let [row-reader-f (row-reader-hof headings-from-to)]
     (->> lines
          (map-indexed vector)
          (map (fn [[idx row-data]] (row-reader-f idx row-data)))
          (filter #(and (-> % :accepted-count pos?) (-> % :translateds empty?)))
-         ;(map #(nth lines (:row-num %)))
+         (map #(nth lines (:row-num %)))
          )))
 
 ;;
@@ -384,4 +389,36 @@
        translate
        ;(write-to-file my-output-file-name)
        ))
+
+(defn matching [num-contig str-1 str-2]
+  (let [[str-1-possibs str-2-possibs] (map #(->> (partition num-contig 1 %)
+                                                (map (partial apply str))) [str-1 str-2])]
+    (first (for [str-1-partition str-1-possibs
+                 str-2-partition str-2-possibs
+                 :when (= str-1-partition str-2-partition)]
+             str-1-partition))))
+
+(defn target-match
+  ([num-contig source-header possible-target-headers]
+   (let [matcher (partial matching num-contig source-header)
+         res (->> (keep matcher possible-target-headers)
+                  distinct
+                  first)]
+     [num-contig res]))
+  ([highest-num-config lowest-num-config source-header possible-target-headers]
+   (assert (> highest-num-config lowest-num-config))
+   (->> (range lowest-num-config (inc highest-num-config))
+        reverse
+        (map #(target-match % source-header possible-target-headers))
+        (filter #(-> % second nil? not))
+        first)))
+
+(defn x-2 []
+  (target-match 10 5 "acerarena" ["123arenaacer" "aenaace" "arenacer" "tinaarena"]))
+
+(defn x-3 []
+  (let [sources (->> my-input-file-name
+                     get-input-lines
+                     first)]
+    sources))
 
