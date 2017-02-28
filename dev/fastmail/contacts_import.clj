@@ -16,7 +16,7 @@
 (def real-file-name-1 "fastmail_import.csv")
 (def real-file real-file-name-2)
 (def test-import "test_import")
-(def my-input-file-name real-file-name-2)
+(def my-input-file-name real-file)
 (def my-output-file-name "output.txt")
 
 ;; Ignores used here won't apply to other situations
@@ -59,12 +59,10 @@
                              ;"Slurr" "Additional Name",
                              "Surname"       "Family Name"})
 (def real-file-translations {
-                             ;;=> "Name"                             "Company"
                              "Given Name"                       "First Name"
                              "Additional Name"                  "Nick Name"
                              "Family Name"                      "Last Name"
                              "Name Prefix"                      "Title"
-                             "Birthday"                         "Birthday"
                              "Organization 1 - Name"            "Company"
                              "Organization 1 - Department"      "Department"
                              "Address 1 - Street"               "Home Street"
@@ -119,8 +117,8 @@
       "Sensitivity"
       "Priority"
       "Subject"
-      ;;=> "Name"
-      ;;=> "Website 1 - Value"
+      "Name"
+      "Website 1 - Value"
       "Initials"
       "Yomi Name"
       "Additional Name Yomi"
@@ -317,9 +315,9 @@
   (let [row-reader-f (row-reader-hof headings-from-to)]
     (->> lines
          (map-indexed vector)
-         (map (fn [idx row-data] (row-reader-f idx row-data)))
-         (filter #(-> % second :not-translateds))
-         (map #(-> second :not-translateds))
+         (map (fn [[idx row-data]] (row-reader-f idx row-data)))
+         (filter #(-> % :not-translateds))
+         (map #(-> % :not-translateds))
          (take 5)
          )))
 
@@ -338,12 +336,49 @@
          )))
 
 ;;
+;; A useless translation configuration is one where the fields with anything in them are ignored.
+;; So you end up with every delivered field being empty.
+;; When described to the user it shows input lines that are ignored.
+;;
+(defn useless? [line]
+  (and #_(-> line :accepted-count pos?) (-> line :translateds empty?)))
+
+(defn determine-type [line]
+  (cond
+    (:not-translateds line) :non-translateds
+    (useless? line) :useless-line))
+
+(defn find-problem [headings-from-to lines]
+  (let [row-reader-f (row-reader-hof headings-from-to)]
+    (->> lines
+         (map-indexed vector)
+         (map (fn [[idx row-data]] (row-reader-f idx row-data)))
+         (filter #(or (:not-translateds %) (useless? %)))
+         (map #(assoc % :problem-type (determine-type %)))
+         ;(map #(nth lines (:row-num %)))
+         first
+         u/probe-on
+         )))
+
+;;
 ;; A completely blank input line, resulting in completely blank output line is not a problem,
 ;; because problems are those that can be fixed by changing translation and ignores.
 ;;
 (defn all-blank? [row]
   (every? #(= % "") row)
   )
+
+(defn desc-problem [incoming-headings lines p]
+  [(:problem-type p)
+   (case (:problem-type p)
+     :non-translateds (:not-translateds p)
+     :useless-line (remove nil?
+                           (map (fn [heading cell-data]
+                                  (when (not= "" cell-data)
+                                    [heading cell-data]))
+                                incoming-headings
+                                (nth lines (:row-num p))
+                                )))])
 
 (defn translate [string-lines]
   (let [[headings-str & lines-strs] string-lines
@@ -355,9 +390,9 @@
         lines' (for [line-str lines-strs]
                  (split-by-comma false line-str))
         lines (join-short-lines (count headings-from-to) lines')]
-    (let [problems (empties headings-from-to lines)]
-      (if (seq problems)
-        ["PROBLEMS" problems]
+    (let [problem (find-problem headings-from-to lines)]
+      (if problem
+        ["PROBLEM:" (desc-problem incoming-headings lines problem)]
         (->> lines
              (cons translated-headings)
              transpose
@@ -391,34 +426,48 @@
        ))
 
 (defn matching [num-contig str-1 str-2]
+  (assert (number? num-contig))
+  (assert (string? str-1) (str "Not string: " str-1))
+  (assert (string? str-2))
   (let [[str-1-possibs str-2-possibs] (map #(->> (partition num-contig 1 %)
-                                                (map (partial apply str))) [str-1 str-2])]
+                                                 (map (partial apply str))) [str-1 str-2])]
     (first (for [str-1-partition str-1-possibs
                  str-2-partition str-2-possibs
                  :when (= str-1-partition str-2-partition)]
-             str-1-partition))))
+             [str-1 str-1-partition str-2]))))
 
 (defn target-match
-  ([num-contig source-header possible-target-headers]
+  ([num-contig possible-target-headers source-header]
+   (assert (string? source-header) (str "Not string: " source-header))
    (let [matcher (partial matching num-contig source-header)
          res (->> (keep matcher possible-target-headers)
                   distinct
                   first)]
-     [num-contig res]))
-  ([highest-num-config lowest-num-config source-header possible-target-headers]
+     (into [num-contig] res)))
+  ([highest-num-config lowest-num-config possible-target-headers source-header]
    (assert (> highest-num-config lowest-num-config))
+   (assert (string? source-header) (str "Not string: " source-header))
    (->> (range lowest-num-config (inc highest-num-config))
         reverse
-        (map #(target-match % source-header possible-target-headers))
+        (map #(target-match % possible-target-headers source-header))
         (filter #(-> % second nil? not))
         first)))
 
 (defn x-2 []
-  (target-match 10 5 "acerarena" ["123arenaacer" "aenaace" "arenacer" "tinaarena"]))
+  (target-match 10 5 ["123arenaacer" "aenaace" "arenacer" "tinaarena"] "acerarena"))
 
+;;
+;; Giving all of them a default. Will need to be checked by user. Validation (when check) will not allow repeats.
+;; In fact if this is re-done every time using target-fastmail-headings minus those already assigned, then the UX
+;; will be quite good.
+;;
 (defn x-3 []
-  (let [sources (->> my-input-file-name
-                     get-input-lines
-                     first)]
-    sources))
+  (let [headings-str (->> my-input-file-name
+                          get-input-lines
+                          first)
+        incoming-headings (mapv s/trim (s/split headings-str #","))
+        _ (println incoming-headings)
+        targets target-fastmail-headings
+        matcher (partial target-match 10 5 targets)]
+    (map matcher incoming-headings)))
 
