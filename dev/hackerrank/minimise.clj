@@ -58,12 +58,10 @@
 ;; pairs in both orders (i.e. [ab] is fine but [ba] is not)
 ;;
 (defn squeezable? [[a b c]]
-  ;(and (safe-neighbors a) (whitesp? b) (safe-neighbors c))
-  false
-  )
+  (and (whitesp? b) (or (safe-neighbors a) (safe-neighbors c))))
 
 (defn elide [triples]
-  (let [squeezabilities (drop-last (cons true (map squeezable? triples)))
+  (let [squeezabilities (drop-last (cons true (map (complement squeezable?) triples)))
         _ (println squeezabilities)
         _ (assert (= (count triples) (count squeezabilities)))
         together (map vector squeezabilities triples)]
@@ -80,7 +78,7 @@
 (defn squeeze-safe [s]
   (assert (string? s) (type s))
   ;(println (str "<" (take-last 2 s) ">"))
-  (apply str (apply str (->> s (partition 3 1) (map first))) (take-last 2 s)))
+  (apply str (apply str (->> s (partition 3 1) elide)) (take-last 2 s)))
 
 (defn minimize-code-2*
   [code-str]
