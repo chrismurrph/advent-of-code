@@ -16,9 +16,7 @@
 ;; 1762 is too low, however 2572 is correct - the question was all the houses that get presents, not just the
 ;; lucky ones
 (defn part-1 []
-  (let [
-        ;input test-input
-        input (slurp (io/resource "day03"))
+  (let [input (slurp (io/resource "day03"))
         ]
     (->> input
          (reductions (fn [acc ele] (mapv + (directions ele) acc)) [0 0])
@@ -26,6 +24,15 @@
          sort
          (partition-by identity)
          (filter #(> (count %) 0))
+         count)))
+
+(defn part-1-again []
+  (let [input (slurp (io/resource "day03"))
+        ]
+    (->> input
+         (reductions (fn [acc ele] (mapv + (directions ele) acc)) [0 0])
+         (group-by identity)
+         (filter #(> (count (second %)) 0))
          count)))
 
 (defn visits [f input]

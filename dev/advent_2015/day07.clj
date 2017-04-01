@@ -9,26 +9,21 @@
 (defn parse-connection [line]
   (let [[a b c d e] line
         cmd (first (filter #{'RSHIFT 'LSHIFT 'NOT 'AND 'OR} line))]
-    (if cmd
-      (condp = cmd
-        'RSHIFT {:cmd 'RSHIFT :params [a c] :out e}
-        'LSHIFT {:cmd 'LSHIFT :params [a c] :out e}
-        'NOT {:cmd 'NOT :params [b] :out d}
-        'AND {:cmd 'AND :params [a c] :out e}
-        'OR {:cmd 'OR :params [a c] :out e})
+    (condp = cmd
+      'RSHIFT {:cmd 'RSHIFT :params [a c] :out e}
+      'LSHIFT {:cmd 'LSHIFT :params [a c] :out e}
+      'NOT {:cmd 'NOT :params [b] :out d}
+      'AND {:cmd 'AND :params [a c] :out e}
+      'OR {:cmd 'OR :params [a c] :out e}
       {:cmd :assign :value a :out c})))
 
 (defn parse [input]
-  (->> input
-       (map #(str "[" % "]"))
-       (map read-string)
-       u/probe-off
-       (map parse-connection)))
+  (map (comp parse-connection read-string #(str "[" % "]")) input))
 
 (def test-parsed-input (into {} (map (juxt :out identity) (parse (input "day07_test")))))
 (def real-parsed-input (into {} (map (juxt :out identity) (parse (input "day07")))))
 
-(defn solve-param [solved acc param]
+(defn solve-param [solved param]
   (if (number? param)
     param
     (some #(when (= (:out %) param) (:value %)) solved)))
@@ -47,9 +42,8 @@
 ;; If can't yet be solved, just return acc. We can get it some future iteration
 ;;
 (defn solve [solved acc ele]
-  (let [param-solver (partial solve-param solved acc)
-        params (:params ele)
-        ]
+  (let [param-solver (partial solve-param solved)
+        params (:params ele)]
     (if params
       (let [param-values (map param-solver params)]
         (if (every? (complement nil?) param-values)

@@ -3,7 +3,10 @@
             [clojure.java.io :as io]
             [utils :as u]))
 
-(defn enough-vowels-and-doubles [word]
+(def vowels #{\a \e \i \o \u})
+
+;; I bet Bruce didn't do it this way. So gonna do my own way more interesting than this
+(defn enough-vowels-and-doubles-1? [word]
   (loop [curr word
          vowles []
          twicely? false]
@@ -14,9 +17,27 @@
       (let [[x & tail] curr
             y (first tail)
             new-twicely? (or twicely? (= x y))]
-        (if (#{\a \e \i \o \u} x)
+        (if (vowels x)
           (recur tail (conj vowles x) new-twicely?)
           (recur tail vowles new-twicely?))))))
+
+;; xazegov
+(defn three-vowels? [word]
+  (->> (filter #(vowels %) word)
+       (drop 2)
+       first
+       ))
+
+;; abcdde
+(defn any-letter-appears-twice-conseq? [word]
+  (->> (partition 2 1 word)
+       (some (fn [[x y]] (= x y)))))
+
+(defn y-1 []
+  (three-vowels? "xazegov"))
+
+(defn y-2 []
+  (any-letter-appears-twice-conseq? "abcfde"))
 
 ;;
 ;; It contains a pair of any two letters that appears at least twice in the string without overlapping, like xyxy (xy)
@@ -58,6 +79,13 @@
   (some #(> (- % x) 1) xs)
   )
 
+(defn non-consec-pairs [word]
+  (->> (partition 2 word)
+       (group-by identity)
+       (some #(>= (-> % second count) 2))))
+
+;; TOO complicated - see above
+;;
 ;; merge-with always works with multiple maps
 ;; we want to recognise the same key coming more than once
 ;; normally merge will just choose the last
@@ -83,6 +111,9 @@
 (defn x-4 []
   (my-non-consecutive-pairs "aaaa" #_"qjhqqj"))
 
+(defn x-5 []
+  (non-consec-pairs "qjhqqj"))
+
 (def input (line-seq (io/reader (io/resource "day05"))))
 
 (defn bad-pair [s]
@@ -91,7 +122,8 @@
 (defn part-1-nice-string [s]
   (assert (string? s))
   (when (not (bad-pair s))
-    (enough-vowels-and-doubles s)))
+    (and (three-vowels? s) (any-letter-appears-twice-conseq? s))
+    #_(enough-vowels-and-doubles-1? s)))
 
 (defn x-1 []
   (map part-1-nice-string ["ugknbfddgicrmopn" "aaa" "jchzalrnumimnmhp" "haegwjzuvuyypxyu" "dvszwmarrgswjxmb"]))

@@ -1,10 +1,17 @@
 (ns advent-2015.day08
-  (:require [clojure.java.io :as io]))
+  (:require [clojure.java.io :as io]
+            [utils :as u]))
 
 (def input
   (line-seq (io/reader (io/resource "day08"))))
 
+;;
+;; Shorten each time by non-memory length of a character, so the sum of all these shortens
+;; (where each shorten is given a length of 1) will be the memory length.
+;; We are always looking at the next two, but may be advancing by 1, 2 or 4
+;;
 (defn unescape-trunc [input]
+  ;(println (str "<to unescape: <" (seq input) "> <" (count input) ">>"))
   (drop (condp = (take 2 input)
           [\\ \"] 2
           [\\ \\] 2
@@ -12,14 +19,26 @@
           1)
         input))
 
-(defn unescape-len [x]
-  (+ -2
-     (count (take-while not-empty
-                        (iterate unescape-trunc x)))))
+;;
+;; To find the true (unescaped, in memory) length of x
+;;
+(defn memory-len [x]
+  (- (-> (take-while not-empty
+                     (iterate unescape-trunc x))
+         u/probe-off
+         count)
+     2))
 
-;; part 1
-#_(reduce + 0 (map #(- (count %) (unescape-len %)) prob8))
+(defn part-1 []
+  (->> input
+       ;(take 1)
+       u/probe-off
+       (map #(- (count %) (u/probe-off (memory-len %) "mem len")))
+       (reduce + 0)))
 
+;;
+;; Always two more characters for the quotes
+;;
 (defn expand-len [w]
   (reduce + 2
           (map #(condp = %
@@ -28,5 +47,5 @@
                   1)
                w)))
 
-;; part 2
-#_(reduce + 0 (map #(- (expand-len %) (count %)) prob8))
+(defn part-2 []
+  (reduce + 0 (map #(- (expand-len %) (count %)) input)))

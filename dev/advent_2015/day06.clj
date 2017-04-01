@@ -52,18 +52,16 @@
        ((juxt first (comp u/string->int second) (comp u/string->int #(nth % 2)) (comp u/string->int #(nth % 3)) (comp u/string->int #(nth % 4))))
        ))
 
-(defn do-cmd [turn-off turn-on toggle]
+(defn reduce-cmd [cmd st]
+  (fn [coords] (reduce cmd st coords)))
+
+(defn do-cmd [down up other]
   (fn [st [cmd top-left-x top-left-y bottom-right-x bottom-right-y]]
     (assert (every? number? [top-left-x top-left-y bottom-right-x bottom-right-y]))
     (let [coords (create-cords [top-left-x top-left-y] [bottom-right-x bottom-right-y])]
-      ;(println "num:" (count coords))
-      (case cmd
-        "turn off"
-        (reduce turn-off st coords)
-        "turn on"
-        (reduce turn-on st coords)
-        "toggle"
-        (reduce toggle st coords)))))
+      (({"turn off" (reduce-cmd down st)
+         "turn on"  (reduce-cmd up st)
+         "toggle"   (reduce-cmd other st)} cmd) coords))))
 
 (defn part-1 []
   (time (let [st (mk-state false 1000 1000)
@@ -73,7 +71,7 @@
                             )
               new-st (reduce (do-cmd turn-off turn-on toggle) st commands)]
           (->> new-st
-               flatten
+               (apply concat)
                (filter identity)
                count))))
 
@@ -85,7 +83,7 @@
                       )
         new-st (reduce (do-cmd lower higher much-higher) st commands)]
     (->> new-st
-         flatten
+         (apply concat)
          (reduce +))))
 
 (defn x-2 []

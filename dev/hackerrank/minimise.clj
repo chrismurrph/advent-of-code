@@ -44,6 +44,12 @@
     (spit minimizer-output-path minimized-code)
     minimized-code))
 
+
+
+(def safe-neighbors
+  "The characters that indicate neighboring spaces are safe to remove."
+  (set "(){}[]\" \t\n"))
+
 (defn whitesp? [ch]
   (Character/isWhitespace ^Character ch))
 
@@ -53,39 +59,23 @@
              %1
              (str %1 %2)) "" s))
 
-;;
-;; Not doing so, but would be possible for the determination to be made with
-;; pairs in both orders (i.e. [ab] is fine but [ba] is not)
-;;
 (defn squeezable? [[a b c]]
   (and (whitesp? b) (or (safe-neighbors a) (safe-neighbors c))))
 
 (defn elide [triples]
-  (let [squeezabilities (drop-last (cons true (map (complement squeezable?) triples)))
-        _ (println squeezabilities)
-        _ (assert (= (count triples) (count squeezabilities)))
-        together (map vector squeezabilities triples)]
-    (->> together
+  (let [squeezabilities (drop-last (cons true (map (complement squeezable?) triples)))]
+    (->> (map vector squeezabilities triples)
          (filter first)
          (map (comp first second)))))
 
-;;
-;; If middle is white and they are safe neighbours then we will skip the next one.
-;; If always take the first after this skip then the inessential whitespace will have been deleted.
-;; To do this get a list of trues and falses and shift one to the right.
-;; map vector these together then filter
-;;
 (defn squeeze-safe [s]
-  (assert (string? s) (type s))
-  ;(println (str "<" (take-last 2 s) ">"))
   (apply str (apply str (->> s (partition 3 1) elide)) (take-last 2 s)))
 
 (defn minimize-code-2*
   [code-str]
   (->> code-str
        del-white
-       squeeze-safe
-       ))
+       squeeze-safe))
 
 (defmacro minimize-code
   "Removes unneccesary whitespace and outputs it to minimizer-output-path, then returns the minimized code."
@@ -93,4 +83,4 @@
   (minimize-code-2* (apply str body)))
 
 (defn x-1 []
-  (minimize-code-2* "(fn [a]    (+ a   1))"))
+  (minimize-code (fn [a]    (+ a   1))))

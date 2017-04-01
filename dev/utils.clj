@@ -15,6 +15,7 @@
 
 ;;
 ;; Returns the indexes that satisfy the predicate
+;; Note that positions (same function) uses keep-indexed - three functions into one!
 ;;
 (defn -indexes-by [f coll]
   (->> coll
@@ -162,6 +163,7 @@
   (first seq))
 
 (def third #(nth % 2))
+(def fifth #(nth % 4))
 
 ;
 ; s and value never change but from-index is recursed, so can use loop recur on just that
@@ -200,6 +202,13 @@
       (if (nil? res)
         acc
         (recur (conj acc res) (inc res))))))
+
+#_(defn indexes-of [s coll]
+  (loop [res [] idx 0]
+    (let [found-idx (s/index-of coll s idx)]
+      (if found-idx
+        (recur (conj res found-idx) (inc found-idx))
+        res))))
 
 (defn insert-at [s x n]
   (apply str (concat (take n s) x (drop n s))))
@@ -353,12 +362,17 @@
         res (:results output)]
     res))
 
-
-
 (defn string->int-not-strict [s]
   (assert (string? s) (str "Wrong type (not string), where value is: " s ", type is " (type s)))
   (try
     (Long/parseLong s)
+    (catch NumberFormatException _
+      nil)))
+
+(defn char->int-not-strict [c]
+  (assert (char? c) (str "Wrong type (not char), where value is: " c ", type is " (type c)))
+  (try
+    (Long/parseLong (str c))
     (catch NumberFormatException _
       nil)))
 
@@ -487,6 +501,13 @@
 (comment
   (defn digits->number [digits]
     (reduce (fn [a b] ('+ ('* a 10) b)) 0 digits)))
+
+(defn digits [n]
+  (loop [result (list), n n]
+    (if (pos? n)
+      (recur (conj result (rem n 10))
+             (quot n 10))
+      result)))
 
 (comment
   (defn gcd [a b]
