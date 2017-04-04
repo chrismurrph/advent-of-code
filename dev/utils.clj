@@ -91,6 +91,13 @@
         blank->nil-fn #(if (= % "") nil %)]
     (-> s after-fn before-fn blank->nil-fn)))
 
+(defn pp
+  ([n x]
+   (binding [pp/*print-right-margin* n]
+     (-> x clojure.pprint/pprint)))
+  ([x]
+   (pp 100 x)))
+
 (defn probe-on
   ([x]
    (println x)
@@ -163,6 +170,7 @@
   (first seq))
 
 (def third #(nth % 2))
+(def fourth #(nth % 3))
 (def fifth #(nth % 4))
 
 ;

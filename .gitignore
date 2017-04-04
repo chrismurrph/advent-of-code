@@ -23,3 +23,5 @@ version_assign_2.txt
 *.edn
 *.log
 day11.clj
+*.csv
+minimized-code.clj

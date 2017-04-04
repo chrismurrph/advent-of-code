@@ -1,7 +1,8 @@
 (ns advent-2015.day12
   (:require [clojure.java.io :as io]
             [utils :as u]
-            [clojure.string :as s]))
+            [clojure.string :as s]
+            [clojure.walk :refer [prewalk]]))
 
 (def input (slurp (io/resource "day12")))
 
@@ -13,27 +14,27 @@
   (boolean (or (= \- x)
                (u/char->int-not-strict x))))
 
-(defn part-1 []
-  (->> input
+(defn add-numbers [in]
+  (->> in
        (partition-by num-or-minus?)
        ;(drop 8)
        ;(take 10)
        (filter #(-> % first num-or-minus?))
        (map ->whole-number)
-       u/probe-off
-       (reduce +)
-       ))
+       (reduce +)))
 
-(defn ch-positions-of [ch coll]
-  (u/positions #(= ch %) coll))
+(defn part-1 []
+  (add-numbers input))
 
-(defn x-1 []
-  (let [start-positions (->> (ch-positions-of \{ input)
-                             (map #(vector % :start)))
-        red-positions (->> (u/indexes-of input ":\"red\"")
-                           (map #(vector % :red)))
-        end-positions (->> (ch-positions-of \} input)
-                           (map #(vector % :end)))
-        all (->> (concat start-positions red-positions end-positions)
-                 (sort-by first))]
-    all))
+(defn contains-red? [x]
+  (and (map? x)
+       (->> x
+            vals
+            (some #(when (= (str %) "red") %)))))
+
+(defn part-2 []
+  (->> (s/replace input ":" " ")
+       read-string
+       (prewalk #(if (contains-red? %) nil %))
+       str
+       add-numbers))
