@@ -6,25 +6,42 @@
 
 (def input (slurp (io/resource "day12")))
 
-(defn ->whole-number [ns]
+(defn xs->whole-number [ns]
   (assert (coll? ns))
   (u/string->int (apply str ns)))
 
-(defn num-or-minus? [x]
+(defn digit-or-minus? [x]
   (boolean (or (= \- x)
-               (u/char->int-not-strict x))))
+               (u/char->int? x))))
 
 (defn add-numbers [in]
   (->> in
-       (partition-by num-or-minus?)
-       ;(drop 8)
-       ;(take 10)
-       (filter #(-> % first num-or-minus?))
-       (map ->whole-number)
+       u/probe-off
+       (partition-by digit-or-minus?)
+       u/probe-off
+       (filter #(-> % first digit-or-minus?))
+       u/probe-off
+       (map xs->whole-number)
+       u/probe-off
+       (reduce +)))
+
+(defn add-numbers-2 [in]
+  (->> in
+       (re-seq #"-?\d+")
+       u/probe-off
+       (map read-string)
+       (reduce +)))
+;;=> 111754
+
+(defn add-numbers-3 [in]
+  (->> in
+       (re-seq #"\d+")
+       u/probe-on
+       (map read-string)
        (reduce +)))
 
 (defn part-1 []
-  (add-numbers input))
+  (add-numbers-2 input))
 
 (defn contains-red? [x]
   (and (map? x)
@@ -38,3 +55,6 @@
        (prewalk #(if (contains-red? %) nil %))
        str
        add-numbers))
+
+(defn x-1 []
+  (add-numbers-2 "12abc12"))

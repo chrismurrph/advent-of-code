@@ -72,14 +72,7 @@
     (->> (range 1 (inc race-duration))
          (map calc-all-fn)
          (mapcat first)
-         (group-by identity)
-         (map (juxt first #(-> % second count)))
-         ;keys
-         ;(apply max)
-         #_(reduce (fn [[name points] [k v]]
-                   (cond
-                     (> k points) [(ffirst v) k]
-                     :default [name points]))
-                 [nil 0])
-         )))
+         frequencies
+         (map second)
+         (apply max))))
 

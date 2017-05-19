@@ -103,9 +103,12 @@
 
 ;;
 ;; Reading it in as a vector gets rid of the commas. But then each element becomes a symbol. Hence (map name) to
-;; convert each of them to strings
+;; convert each of them to strings:
+;; R2, L1, R2, R1, R1, L3, R3, L5,
 ;;
-(def data (map name (read-string (str "[" (slurp (io/resource "one.txt")) "]"))))
+(def data (->> (str "[" (slurp (io/resource "one.txt")) "]")
+               read-string
+               (map name)))
 
 ;;
 ;; Each coming into mapping function is a string, such as "R21".
@@ -143,7 +146,7 @@
        ))
 
 ;;
-;; Adding absolute x to absolute y gives euclidian distance
+;; Adding absolute x to absolute y
 ;;
 (defn point-to-dist [p]
   (->> p
@@ -155,7 +158,8 @@
        parse-data
        positions
        last
-       point-to-dist))
+       point-to-dist
+       ))
 
 ;;
 ;; Looking for position where you cross your own path for the first time.

@@ -2,6 +2,13 @@
   (:require [clojure.string :as s]
             [clojure.pprint :as pp]))
 
+(defn str->number [x]
+  (when-let [num (re-matches #"-?\d+\.?\d*" x)]
+    (try
+      (bigdec num)
+      (catch Exception _
+        nil))))
+
 ;;
 ;; Won't work in assert because of namespace issues, so copy into your own file until
 ;; I become better at macros (or ask on SO)
@@ -370,14 +377,14 @@
         res (:results output)]
     res))
 
-(defn string->int-not-strict [s]
+(defn string->int? [s]
   (assert (string? s) (str "Wrong type (not string), where value is: " s ", type is " (type s)))
   (try
     (Long/parseLong s)
     (catch NumberFormatException _
       nil)))
 
-(defn char->int-not-strict [c]
+(defn char->int? [c]
   (assert (char? c) (str "Wrong type (not char), where value is: " c ", type is " (type c)))
   (try
     (Long/parseLong (str c))

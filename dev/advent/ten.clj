@@ -41,8 +41,8 @@
       (case cmd
         :value-goes acc
         :bot-gives (let [[bot-num [low-entity-type] low-entity-value [high-entity-type] high-entity-value] tail]
-                     (assoc acc bot-num {:low {:type low-entity-type :entity-num low-entity-value}
-                                         :high {:type high-entity-type :entity-num high-entity-value}
+                     (assoc acc bot-num {:low    {:type low-entity-type :entity-num low-entity-value}
+                                         :high   {:type high-entity-type :entity-num high-entity-value}
                                          :values []}))))
     {}
     hiccup))
@@ -63,22 +63,22 @@
               retrieved-bot (bots bot)
               new-bot (update retrieved-bot :values conj value)
               removed-state (if from-bot
-                             (do
-                               (assert (number? from-bot) (str "Not number: " (type from-bot)))
-                    ;(println (str "to rem: " value " from " from-bot))
-                    ;(println (str "from bot values before: " (:values (get bots from-bot))))
-                               (-> bots
-                                   (update-in [from-bot :values] (fn [old-values]
-                                                        ;(println "b4:" old-values)
-                                                                   (let [res (vec (remove #{value} old-values))]
-                                                              ;_ (println "after:" res)
+                              (do
+                                (assert (number? from-bot) (str "Not number: " (type from-bot)))
+                                ;(println (str "to rem: " value " from " from-bot))
+                                ;(println (str "from bot values before: " (:values (get bots from-bot))))
+                                (-> bots
+                                    (update-in [from-bot :values] (fn [old-values]
+                                                                    ;(println "b4:" old-values)
+                                                                    (let [res (vec (remove #{value} old-values))]
+                                                                      ;_ (println "after:" res)
 
-                                                                     res)))))
+                                                                      res)))))
 
-                             bots)
+                              bots)
               new-state (-> removed-state
                             (assoc bot new-bot))]
-              ;_ (when from-bot (println "from bot values after: " (:values (get new-state from-bot))))
+          ;_ (when from-bot (println "from bot values after: " (:values (get new-state from-bot))))
 
           (if (> (-> new-bot :values count) 1)
             (let [bot-values (:values new-bot)
@@ -141,13 +141,17 @@
 (def data (string/split-lines (string/trim (slurp (io/resource "ten.txt")))))
 
 ;;
-;; Grabs all from a line eg (:bot116 :bot157 :bot197)
+;; Example input (l): "bot 2 gives low to bot 1 and high to bot 0"
+;; Grabs all from a line eg (:bot2 :bot1 :bot0)
 ;; Put the second 2 (rest) together into a keyword.
-;; Second 2 are two brackets (as with re-find and re-match)
+;; Second 2 come from the two brackets (as with re-find and re-match)
 ;;
 (defn addr-names [l]
   (->> (re-seq #"(bot|output)\s(\d+)" l)
-       (map (comp keyword #(apply str %) rest))))
+       (map (comp
+              keyword
+              #(apply str %)
+              rest))))
 
 ;;
 ;; Each line is a value or a bot:
@@ -157,8 +161,8 @@
 (defn parse-line [l]
   (let [addrs (addr-names l)]
     (condp = (first l)
-      \v  (vector :to (first addrs) (u/to-int (re-find #"\d+" l)))
-      \b  (cons :from addrs))))
+      \v (vector :to (first addrs) (u/to-int (re-find #"\d+" l)))
+      \b (cons :from addrs))))
 
 ;; all commands originate at a unique bot
 #_(let [froms (map second (filter #(= (first %) :from) input))]
@@ -173,7 +177,7 @@
   (update registers addr (fnil conj #{}) v))
 
 (defn move-value [registers from to v]
-  {:pre [((get registers from) v)]} ;; must have val to give
+  {:pre [((get registers from) v)]}                         ;; must have val to give
   (-> registers
       (update from disj v)
       (give-to-addr to v)))
@@ -181,16 +185,17 @@
 ;;
 ;; first in any command is either :from or :to
 ;; :to will be eg [:to :bot77 7] [:to :bot113 11] [:to :bot162 59]
+;; :from will be eg (:from :bot2 :bot1 :bot0) => means :bot2 gives low to :bot1 and high to :bot0
 ;; registers will end up with :bot1 having a #{} of microchip values
 ;; tos are the value lines, which are now becoming registers.
 ;;
 (defn make-init [commands]
   (let [{:keys [from to]} (group-by first commands)]
-    (println to)
-    {:commands from
+    ;(println to)
+    {:commands  from
      :registers (reduce #(apply give-to-addr %1 (rest %2)) {} to)}))
 
-(defn high-low-command [registers [_ from low-to high-to :as com]]
+(defn high-low-command [registers [_ from low-to high-to]]
   (let [[lv hv] ((juxt first last) (sort (get registers from #{})))]
     (assert (and lv hv (not= lv hv)))
     (-> registers
@@ -199,17 +204,21 @@
 
 ;;
 ;; If a bot only has one microchip then it can't do anything - must wait till has two.
+;; Returns set of all bots that have collected enough (two) to be able to use the command
+;; that they have
 ;;
-(defn active-registers [x] (->> x (filter #(>= (count (val %)) 2)) keys set))
+(defn active-registers [x]
+  (assert (map? x) (str "Expected map, got <" x ">"))
+  (->> x (filter #(>= (count (val %)) 2)) keys set))
 
 ;;
 ;; A command is something like "bot 2 gives low to bot 1 and high to bot 0". But this command is
 ;; only going to be activated when bot2 has 2 microchips.
-;; The second thing in a command must be a bot or output number.
+;; The second thing in a command must be a bot or output.
 ;; So when registers are activated we can pluck some commands
 ;;
 (defn transition-state [{:keys [registers commands] :as state}]
-  (let [active-regs                     (active-registers registers)
+  (let [active-regs (active-registers registers)
         [active-commands rest-commands] (pluck #(-> % second active-regs) commands)]
     (when-not (empty? active-commands)
       (-> state
@@ -221,9 +230,35 @@
   (->> (iterate transition-state (make-init (map parse-line data)))
        (take-while #(not (nil? %)))
        (map :registers)
+       ;; ({:bot74 #{67}, :bot110 #{29}, :bot3 #{5} :bot20 #{61 17})
+       u/probe-on
+       (map #(some (fn [[k v]] (when (= #{61 17} v) k)) %))
+       (filter #(not (nil? %)))
+       first
+       ))
+;;=> :bot141
+
+(defn finished? [st]
+  (->> st
+       (map :registers)
        (keep #(some (fn [[k v]] (when (empty? (difference #{61 17} v)) k)) %))
-       first))
-;;=> :bot161
+       ))
+
+(defn state->answer [st]
+  (->> st
+       (map :registers)
+       ;(keep #(some (fn [[k v]] (when (empty? (difference #{61 17} v)) k)) %))
+       ))
+
+(defn x-a []
+  (->> (iterate transition-state (make-init (map parse-line data)))
+       (drop-while (complement finished?))
+       first
+       :registers
+       ;vals
+       ;(filter #(= #{61 17} %))
+       ;state->answer
+       ))
 
 ;; part 2
 (defn x-2 []
@@ -235,4 +270,28 @@
        vals
        (map first)
        (apply *)))
-;; => 133163
+;; => 1209
+
+(def test-lines ["bot 75 gives low to bot 145 and high to bot 95"
+                 "bot 96 gives low to output 10 and high to bot 66"])
+
+(defn x-3 []
+  (map addr-names test-lines))
+
+(def start-state [0 [1 2 3]])
+(def make-init identity)
+(defn transition-state [[counted triple]]
+  [(inc counted) (map inc triple)])
+(defn finished? [[_ triple]]
+  (zero? (mod (reduce * triple) 910)))
+(defn extract-res [[counted _]] counted)
+
+;;
+;; Lets do example on simple problem for talk
+;;
+(defn y-1 []
+  (->> (iterate transition-state (make-init start-state))
+       (drop-while (complement finished?))
+       first
+       extract-res
+       ))

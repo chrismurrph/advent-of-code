@@ -5,7 +5,7 @@
 
 (def instr-data
   (->> (slurp "./advent/twenty_one.txt")
-       (s/split-lines)
+       s/split-lines
        (map #(read-string (str "[" % "]")))))
 
 ;; operations

@@ -25,12 +25,12 @@
     [coord (nth (nth layout y) x)]))
 
 (defn ch->int [ch]
-  (u/string->int-not-strict (str ch)))
+  (u/string->int? (str ch)))
 
 (defn all-numeric-coords [layout]
   (let [width (-> layout first count)
         as-str (apply str layout)
-        indexes (u/indexes-by (comp u/string->int-not-strict str) as-str)
+        indexes (u/indexes-by (comp u/string->int? str) as-str)
         ]
     (->> indexes
          (map

@@ -18,17 +18,17 @@
 ;; For the 2nd part what's at 6th position has to be between 0 and 7 inclusive to be a number
 ;; that provides the position.
 ;;
-(defn right-hash? [s]
+(defn correct-hash? [s]
   (fn [num]
     (let [st (str s num)
           hashed (md5 st)
-          position (u/string->int-not-strict (str (nth hashed 5)))]
+          position (u/string->int? (str (nth hashed 5)))]
       (when (and ((fnil >= 10) position 0) ((fnil <= 10) position 7) (s/starts-with? hashed "00000"))
         {:fine-hash hashed :num num :position position :character (nth hashed 6)}))))
 
 (defn five-leading [start s]
   (let [numbers (iterate inc start)
-        hash-f (right-hash? s)
+        hash-f (correct-hash? s)
         res (some hash-f numbers)]
     res))
 
