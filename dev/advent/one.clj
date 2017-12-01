@@ -178,8 +178,15 @@
        ffirst
        point-to-dist))
 
-(defn x []
-  (->> data
-       parse-data
+(defn x-1 []
+  (->> [[\R 4] [\R 3] [\R 2] [\R 4]]
        positions
-       (reductions conj (list))))
+       u/probe-on
+       (reductions conj (list))
+       u/probe-on
+       (filter (fn [[x & xs]] ((set xs) x)))
+       u/probe-on
+       ffirst
+       u/probe-on
+       point-to-dist
+       ))
