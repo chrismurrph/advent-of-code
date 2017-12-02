@@ -1,7 +1,8 @@
 (ns advent.twenty-two
   (:require [clojure.pprint :as pp]
             [clojure.string :as s]
-            [utils :as u])
+            [utils :as u]
+            [clojure.java.io :as io])
   (:import (java.io StringReader BufferedReader)))
 
 (defn all-but-last [in]
@@ -73,7 +74,7 @@
 
 (defn part-one []
   (let [
-        raw-input (slurp "./advent/twenty_two.txt")
+        raw-input (slurp (io/resource "2016/twenty_two.txt"))
         ;raw-input steps
         in (line-seq (BufferedReader. (StringReader. raw-input)))
         raw-df-lines (drop 2 in)
@@ -223,7 +224,7 @@
 (def column-height 3)
 
 (defn x-3 []
-  (let [raw-input (slurp "./advent/twenty_two_example.txt")
+  (let [raw-input (slurp (io/resource "2016/twenty_two_example.txt"))
         ;raw-input steps
         in (line-seq (BufferedReader. (StringReader. raw-input)))
         raw-df-lines (drop 2 in)
@@ -248,7 +249,7 @@
     (filter (fn [[node-1 node-2]] (not= node-1 node-2)) (map vector flat-1 flat-2))))
 
 (defn x []
-  (let [raw-input (slurp "./advent/twenty_two_example.txt")
+  (let [raw-input (slurp (io/resource "2016/twenty_two_example.txt"))
         ;raw-input steps
         in (line-seq (BufferedReader. (StringReader. raw-input)))
         raw-df-lines (drop 2 in)

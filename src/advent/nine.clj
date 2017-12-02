@@ -73,7 +73,7 @@
     in))
 
 (defn first-part-correct []
-  (let [input (slurp "./advent/nine.txt") ;; haven't converted despite file moved
+  (let [input (slurp (io/resource "2016/nine.txt"))         ;; haven't converted despite file moved
         raw-series (first (line-seq (BufferedReader. (StringReader. input))))
         _ (println raw-series)
         res (map (fn [take-out]
@@ -167,7 +167,7 @@
       )))
 
 (defn second-part-correct []
-  (let [raw-input (slurp "./advent/nine.txt")
+  (let [raw-input (slurp (io/resource "2016/nine.txt"))
         in (first (line-seq (BufferedReader. (StringReader. raw-input))))
         _ (println in)
         res (time (decompressed-length in))]

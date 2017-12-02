@@ -1,6 +1,7 @@
 (ns advent.twenty
   (:require [clojure.string :as s]
-            [utils :as u])
+            [utils :as u]
+            [clojure.java.io :as io])
   (:import (java.io StringReader BufferedReader)))
 
 (defn make-obj [input]
@@ -52,7 +53,7 @@
 (def max-ip 4294967295)
 
 (defn x []
-  (let [input (slurp "./advent/twenty.txt")
+  (let [input (slurp (io/resource "2016/twenty.txt"))
         raw-series (line-seq (BufferedReader. (StringReader. input)))
         series (map make-obj raw-series)
         sorted (sort-by :lower series)
@@ -81,7 +82,7 @@
   (new-ips-count {:lower 0, :upper 31053879} {:lower 31053881, :upper 50881439}))
 
 (defn x-2 []
-  (let [input (slurp "./advent/twenty.txt")
+  (let [input (slurp (io/resource "2016/twenty.txt"))
         raw-series (line-seq (BufferedReader. (StringReader. input)))
         series (map make-obj raw-series)
         uppers (map :upper series)]

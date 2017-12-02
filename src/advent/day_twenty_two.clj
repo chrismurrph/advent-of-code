@@ -38,7 +38,7 @@
                    (map read-node))]
     (count (viable-pairs nodes))))
 
-(def real-data (slurp "./advent/twenty_two.txt"))
+(def real-data (slurp (io/resource "2016/twenty_two.txt")))
 
 (defn nodes []
   (let [nodes (->> real-data

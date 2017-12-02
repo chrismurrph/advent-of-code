@@ -2,7 +2,8 @@
   (:require [instaparse.core :as insta]
             [clojure.string :as s]
             [clojure.pprint :as pp]
-            [utils :as u])
+            [utils :as u]
+            [clojure.java.io :as io])
   (:import (java.io StringReader BufferedReader)))
 
 (def steps ["move position 0 to position 3"
@@ -237,7 +238,7 @@
 ;;
 (defn x []
   (let [
-        raw-input (slurp "./advent/twenty_one.txt")
+        raw-input (slurp (io/resource "2016/twenty_one.txt"))
         ;raw-input steps
         in (line-seq (BufferedReader. (StringReader. raw-input)))
         instructions (retrieve-instructions in)]
@@ -248,7 +249,7 @@
 ;; "afhdbegc" is correct answer
 (defn part-2 []
   (let [
-        raw-input (slurp "./advent/twenty_one.txt")
+        raw-input (slurp (io/resource "2016/twenty_one.txt"))
         ;raw-input steps
         in (line-seq (BufferedReader. (StringReader. raw-input)))
         instructions (retrieve-instructions in)]

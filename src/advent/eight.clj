@@ -1,6 +1,7 @@
 (ns advent.eight
   (:require [instaparse.core :as insta]
-            [utils :as u])
+            [utils :as u]
+            [clojure.java.io :as io])
   (:import (java.io StringReader BufferedReader)))
 
 ;;
@@ -30,7 +31,7 @@
 ;;
 (defn first-part-correct []
   (let [input test-input
-        input (slurp "./advent/eight.txt")
+        input (slurp (io/resource "2016/eight.txt"))
         raw-series (line-seq (BufferedReader. (StringReader. input)))]
 
     (->> raw-series
@@ -124,7 +125,7 @@
 
 (defn second-part [total-rows total-cols]
   (let [raw-series test-input
-        input (slurp "./advent/eight.txt")
+        input (slurp (io/resource "2016/eight.txt"))
         raw-series (line-seq (BufferedReader. (StringReader. input)))
         row-maker (make-row total-cols)
         state (mapv row-maker (range total-rows))

@@ -1,4 +1,5 @@
 (ns advent.seven
+  (:require [clojure.java.io :as io])
   (:import (java.io StringReader BufferedReader)))
 
 (def input-1 "ioxxoj[asdfgh]zxcvbn")
@@ -95,7 +96,7 @@
 
 (defn x-3 []
   (let [
-        input (slurp "./advent/seven.txt")
+        input (slurp (io/resource "2016/seven.txt"))
         raw-series (line-seq (BufferedReader. (StringReader. input)))
         ;raw-series [input-2]
         secures (map tls-secure? raw-series)
@@ -148,7 +149,7 @@
 
 (defn x []
   (let [
-        input (slurp "./advent/seven.txt")
+        input (slurp (io/resource "2016/seven.txt"))
         raw-series (line-seq (BufferedReader. (StringReader. input)))
         ;raw-series [input-2]
         secures (map ssl-secure-1? raw-series)

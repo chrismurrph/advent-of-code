@@ -1,5 +1,6 @@
 (ns advent.twelve
-  (:require [instaparse.core :as insta])
+  (:require [instaparse.core :as insta]
+            [clojure.java.io :as io])
   (:import (java.io BufferedReader StringReader)))
 
 (def steps ["cpy 41 a"
@@ -86,7 +87,7 @@
     (run tags)))
 
 (defn x []
-  (let [raw-input (slurp "./advent/twelve.txt")
+  (let [raw-input (slurp (io/resource "2016/twelve.txt"))
         in (line-seq (BufferedReader. (StringReader. raw-input)))
         instructions (retrieve-instructions in)
         run (runner instructions)]

@@ -1,5 +1,6 @@
 (ns advent.twenty-three
-  (:require [instaparse.core :as insta])
+  (:require [instaparse.core :as insta]
+            [clojure.java.io :as io])
   (:import (java.io BufferedReader StringReader)))
 
 (def grammar-1
@@ -129,12 +130,12 @@
                 (recur new-state instructions (inc index) (inc counted) nil)))
             state))))))
 
-(def real-file "./advent/twenty_three.txt")
-(def test-file "./advent/twenty_three_example.txt")
+(def real-file "2016/twenty_three.txt")
+(def test-file "2016/twenty_three_example.txt")
 (def file-name real-file)
 
 (defn x []
-  (let [raw-input (slurp file-name)
+  (let [raw-input (slurp (io/resource file-name))
         tags part-two-tags
         in (line-seq (BufferedReader. (StringReader. raw-input)))
         instructions (retrieve-instructions in)

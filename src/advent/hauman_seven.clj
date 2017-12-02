@@ -2,10 +2,10 @@
   (:require [clojure.java.io :as io])
   (:import (java.io BufferedReader StringReader)))
 
-;(def data (line-seq (io/reader (io/resource "./advent/seven.txt"))))
+;(def data (line-seq (io/reader (io/resource "2016/seven.txt"))))
 
 (defn data []
-  (let [input (slurp "./advent/seven.txt")
+  (let [input (slurp (io/resource "2016/seven.txt"))
         raw-series (line-seq (BufferedReader. (StringReader. input)))]
     raw-series))
 

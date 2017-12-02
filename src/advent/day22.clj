@@ -56,10 +56,10 @@
           (map #(mapv vec %)))
         (s/split-lines s)))
 
-(def real-data (parse-input (slurp "./advent/twenty_two.txt")))
-(def example-data (parse-input (slurp "./advent/twenty_two_example.txt")))
-(def blocking-data (parse-input (slurp "./advent/twenty_two_blocking_example.txt")))
-(def bruce-data (parse-input (slurp "./advent/twenty_two_bruce.txt")))
+(def real-data (parse-input (slurp (io/resource "2016/twenty_two.txt"))))
+(def example-data (parse-input (slurp (io/resource "2016/twenty_two_example.txt"))))
+(def blocking-data (parse-input (slurp (io/resource "2016/twenty_two_blocking_example.txt"))))
+(def bruce-data (parse-input (slurp (io/resource "2016/twenty_two_bruce.txt"))))
 
 (def available (partial apply -))
 (def size first)

@@ -4,7 +4,7 @@
     [clojure.string :as s]))
 
 (def instr-data
-  (->> (slurp "./advent/twenty_one.txt")
+  (->> (slurp (io/resource "2016/twenty_one.txt"))
        s/split-lines
        (map #(read-string (str "[" % "]")))))
 

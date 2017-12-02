@@ -17,7 +17,7 @@
   :target-path "target/%s"
 
   :clean-targets ^{:protect false} ["target"]
-  :source-paths ["dev"]
+  :source-paths ["src"]
 
   :profiles {:dev {
                    :repl-options {
