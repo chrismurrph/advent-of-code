@@ -230,7 +230,7 @@
   (->> (iterate transition-state (make-init (map parse-line data)))
        (take-while #(not (nil? %)))
        (map :registers)
-       ;; ({:bot74 #{67}, :bot110 #{29}, :bot3 #{5} :bot20 #{61 17})
+       ;; ({:bot74 #{67}, :bot110 #{29}, :bot3 #{5} :bot20 #{61 17}})
        u/probe-on
        (map #(some (fn [[k v]] (when (= #{61 17} v) k)) %))
        (filter #(not (nil? %)))
@@ -278,20 +278,21 @@
 (defn x-3 []
   (map addr-names test-lines))
 
-(def start-state [0 [1 2 3]])
-(def make-init identity)
-(defn transition-state [[counted triple]]
-  [(inc counted) (map inc triple)])
-(defn finished? [[_ triple]]
-  (zero? (mod (reduce * triple) 910)))
-(defn extract-res [[counted _]] counted)
+(comment
+  (def start-state [0 [1 2 3]])
+  (def make-init identity)
+  (defn transition-state [[counted triple]]
+    [(inc counted) (map inc triple)])
+  (defn finished? [[_ triple]]
+    (zero? (mod (reduce * triple) 910)))
+  (defn extract-res [[counted _]] counted)
 
-;;
-;; Lets do example on simple problem for talk
-;;
-(defn y-1 []
-  (->> (iterate transition-state (make-init start-state))
-       (drop-while (complement finished?))
-       first
-       extract-res
-       ))
+  ;;
+  ;; Lets do example on simple problem for talk
+  ;;
+  (defn y-1 []
+    (->> (iterate transition-state (make-init start-state))
+         (drop-while (complement finished?))
+         first
+         extract-res
+         )))

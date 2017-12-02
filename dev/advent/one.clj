@@ -178,15 +178,34 @@
        ffirst
        point-to-dist))
 
-(defn x-1 []
-  (->> [[\R 4] [\R 3] [\R 2] [\R 4]]
-       positions
-       u/probe-on
-       (reductions conj (list))
-       u/probe-on
-       (filter (fn [[x & xs]] ((set xs) x)))
-       u/probe-on
-       ffirst
-       u/probe-on
-       point-to-dist
-       ))
+(comment
+  (defn x-1 []
+    (->> [[\R 4] [\R 3] [\R 2] [\R 4]]
+         <<<<<<< Updated upstream
+         positions
+         u/probe-on
+         (reductions conj (list))
+         u/probe-on
+         (filter (fn [[x & xs]] ((set xs) x)))
+         u/probe-on
+         ffirst
+         u/probe-on
+         point-to-dist
+         =======
+         positions
+         u/probe-on
+         (reductions conj (list))
+         u/probe-on
+         (filter (fn [[x & xs]] ((set xs) x)))
+         u/probe-on
+         ffirst
+         u/probe-on
+         point-to-dist
+         ))
+
+  (defn x-2 []
+    (->> [[\R 23], [\L 1], [\R 2], [\R 10], [\R 34], [\R 30]]
+         positions
+         u/probe-on
+         >>>>>>> Stashed changes
+         )))
