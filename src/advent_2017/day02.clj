@@ -29,9 +29,8 @@
 
 (defn row->evenly-divided [xs]
   (->> (u/combinations xs 2)
-       (some (fn [[big small]]
-               (assert (>= big small))
-               (let [res (/ big small)]
+       (some (fn [xy]
+               (let [res (apply / (sort-by - xy))]
                  (when (int? res)
                    res))))))
 
@@ -39,7 +38,8 @@
 (defn x-2 []
   (let [input #_ex2 (get-input)]
     (->> input
-         (map (comp row->evenly-divided #(sort-by - %)))
+         (map row->evenly-divided)
+         dev/probe-on
          (reduce +))))
 
 ;; ans 43074

@@ -1,6 +1,5 @@
 (ns utils
   (:require [clojure.string :as s]
-            [clojure.pprint :as pp]
             [dev :as dev]))
 
 (defn str->number [x]
@@ -188,6 +187,9 @@
     val))
 
 (defn whole-number? [n]
+  (zero? (rem n 1)))
+
+#_(defn whole-number? [n]
   (= 0.0 (rem n 1)))
 
 (defn sqrt [n]
