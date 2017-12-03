@@ -231,7 +231,7 @@
        (take-while #(not (nil? %)))
        (map :registers)
        ;; ({:bot74 #{67}, :bot110 #{29}, :bot3 #{5} :bot20 #{61 17}})
-       u/probe-on
+       dev/probe-on
        (map #(some (fn [[k v]] (when (= #{61 17} v) k)) %))
        (filter #(not (nil? %)))
        first

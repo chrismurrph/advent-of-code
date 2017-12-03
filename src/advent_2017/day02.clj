@@ -1,6 +1,7 @@
 (ns advent-2017.day02
   (:require [clojure.java.io :as io]
-            [clojure.string :as s]))
+            [clojure.string :as s]
+            [utils :as u]))
 
 (def ex [[5 1 9 5]
          [7 5 3]
@@ -26,43 +27,24 @@
        (apply -)
        ))
 
-;;
-;; Returns evenly divided or nil
-;;
-(defn -row->evenly-divided [row]
-  (loop [xs row]
-    (when (->> xs (drop 1) seq)
-      (let [[top bottom] ((juxt last first) xs)
-            ans (/ top bottom)]
-        (if (int? ans)
-          ans
-          (recur (butlast xs)))))))
+(defn row->evenly-divided [xs]
+  (->> (u/combinations xs 2)
+       (some (fn [[big small]]
+               (assert (>= big small))
+               (let [res (/ big small)]
+                 (when (int? res)
+                   res))))))
 
-(defn row-checksum-2 [row]
-  (loop [xs (sort row)]
-    (let [ans (-row->evenly-divided xs)]
-      (if ans
-        ans
-        (recur (next xs))))))
-
+;; ans 280
 (defn x-2 []
   (let [input #_ex2 (get-input)]
     (->> input
-         (map row-checksum-2)
-         (reduce +))))
-
-;; same as x-1 but factored out bit that will change for x-2
-(defn x-1a []
-  (let [input #_ex (get-input)]
-    (->> input
-         (map row-checksum-1)
+         (map (comp row->evenly-divided #(sort-by - %)))
          (reduce +))))
 
 ;; ans 43074
 (defn x-1 []
   (let [input #_ex (get-input)]
     (->> input
-         (map sort)
-         (map (juxt (partial apply max) (partial apply min)))
-         (map (partial apply -))
+         (map row-checksum-1)
          (reduce +))))

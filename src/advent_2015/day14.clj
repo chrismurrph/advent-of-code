@@ -1,6 +1,7 @@
 (ns advent-2015.day14
   (:require [clojure.java.io :as io]
-            [utils :as u]))
+            [utils :as u]
+            [dev :as dev]))
 
 (def input
   (line-seq (io/reader (io/resource "day14"))))
@@ -26,7 +27,7 @@
 (defn get-data [in]
   (->> in
        ;(take 8)
-       u/probe-off
+       dev/probe-off
        (map (partial re-matches #"(\w+) can fly (\d+) km/s for (\d+) seconds, but then must rest for (\d+) seconds."))
        (map next)
        (map (juxt first (fn [[a b c d]]

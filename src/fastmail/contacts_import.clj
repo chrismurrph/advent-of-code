@@ -149,7 +149,7 @@
       {:row-num row-num :accepted-count accepted-count}
       (->> value-populated-headings
            (mapv make-translated-f)
-           ;u/probe-on
+           ;dev/probe-on
            (group-by #((complement nil?) (:cell/to %)))
            (map (fn [[k v]] (if k [:translateds v] [:not-translateds v])))
            (into {:row-num row-num :accepted-count accepted-count})))))
@@ -357,7 +357,7 @@
          (map #(assoc % :problem-type (determine-type %)))
          ;(map #(nth lines (:row-num %)))
          first
-         u/probe-on
+         dev/probe-on
          )))
 
 ;;

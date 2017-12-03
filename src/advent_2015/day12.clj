@@ -16,19 +16,19 @@
 
 (defn add-numbers [in]
   (->> in
-       u/probe-off
+       dev/probe-off
        (partition-by digit-or-minus?)
-       u/probe-off
+       dev/probe-off
        (filter #(-> % first digit-or-minus?))
-       u/probe-off
+       dev/probe-off
        (map xs->whole-number)
-       u/probe-off
+       dev/probe-off
        (reduce +)))
 
 (defn add-numbers-2 [in]
   (->> in
        (re-seq #"-?\d+")
-       u/probe-off
+       dev/probe-off
        (map read-string)
        (reduce +)))
 ;;=> 111754
@@ -36,7 +36,7 @@
 (defn add-numbers-3 [in]
   (->> in
        (re-seq #"\d+")
-       u/probe-on
+       dev/probe-on
        (map read-string)
        (reduce +)))
 

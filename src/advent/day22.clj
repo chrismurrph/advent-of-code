@@ -1,6 +1,7 @@
 (ns advent.day22
   (:require
     [utils :as u]
+    [dev :as dev]
     [clojure.java.io :as io]
     [clojure.string :as s]
     [clojure.pprint :as pp]
@@ -273,7 +274,7 @@
         _ (assert (pos? (count sorted)))]
     (if a?
       sorted
-      (u/probe-off (take 1 sorted)))))
+      (dev/probe-off (take 1 sorted)))))
 
 (def last-g (atom nil))
 

@@ -133,7 +133,7 @@
          (map #(conj % 0))
          ; Should solve 2nd
          (filter filter-fn)
-         ;(map u/probe-on)
+         ;(map dev/probe-on)
          (map (distance-hof distances))
          (sort-by first)
          first

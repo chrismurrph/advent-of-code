@@ -1,6 +1,7 @@
 (ns utils
   (:require [clojure.string :as s]
-            [clojure.pprint :as pp]))
+            [clojure.pprint :as pp]
+            [dev :as dev]))
 
 (defn str->number [x]
   (when-let [num (re-matches #"-?\d+\.?\d*" x)]
@@ -67,25 +68,6 @@
   (let [diff (- (count coll) (count right))]
     (vec (concat (take diff coll) right))))
 
-;; Seems like it was gonna work, but have no effect
-;; (alter-var-root (var pp/*print-right-margin*) (constantly 200))
-;; (alter-var-root (var pp/*print-miser-width*) (constantly 200))
-;; (alter-var-root (var pp/*print-length*) (constantly 200))
-;; pr-str might be proper way
-;; (defn pp-str [x] (-> x clojure.pprint/pprint with-out-str))
-
-(defn pp-str
-  ([x n]
-   (binding [pp/*print-right-margin* n]
-     (-> x clojure.pprint/pprint with-out-str)))
-  ([x]
-   (pp-str x 1000)))
-
-;(def pp-str (fn [s]
-;              (pr-str s {:right-margin 200
-;                         :not-exists   20
-;                         :miser-width  200})))
-
 (defn after [begin-marker s]
   (apply str (drop (count begin-marker) (drop-while #(not= % (first begin-marker)) s))))
 
@@ -98,46 +80,6 @@
         blank->nil-fn #(if (= % "") nil %)]
     (-> s after-fn before-fn blank->nil-fn)))
 
-(defn pp
-  ([n x]
-   (binding [pp/*print-right-margin* n]
-     (-> x clojure.pprint/pprint)))
-  ([x]
-   (pp 100 x)))
-
-(defn probe-on
-  ([x]
-   (println x)
-   x)
-  ([x msg]
-   (println msg x)
-   x))
-
-(defn probe-stack
-  ([x]
-   (do
-     (println x)
-     (assert false))
-   x)
-  ([x msg]
-   (do
-     (println msg x)
-     (assert false msg))
-   x))
-
-(defn probe-off
-  ([x]
-   x)
-  ([x msg]
-   x))
-
-;;
-;; Same as (not (nil? x))
-;;
-(defn is? [x]
-  (or (boolean? x) x))
-
-;; NumberFormatException
 (defn string->int [s]
   (assert s)
   (assert (or (string? s) (char? s)) (str "Wrong type: <" (type s) ">, <" s ">"))
@@ -486,6 +428,12 @@
         (concat (map #(cons (first population) %) (combinations (rest population) (dec sz)))
                 (combinations (rest population) sz))))))
 
+;;
+;; Each combination returned is in a specific order and you don't get other
+;; combinations of that order 'mixed up'. Once a position for an element is
+;; found it is 'not replaced'. If the population was pre-sorted, then that order
+;; will be kept amongst all the resultant combinations.
+;;
 (defn combinations [population sz]
   (cond
     (= sz 0) '(())
@@ -551,7 +499,7 @@
 (def heavy? false)
 (defn my-pr-str [labs]
   (if heavy?
-    (pp-str labs 100)
+    (dev/pp-str labs 100)
     (str (count labs))))
 
 (defn breath-first-search [starting-lab generate-possible-moves destination-state?]

@@ -64,10 +64,10 @@
 
 (defn finished? [st]
   (->> st
-       ;u/probe-on
+       ;dev/probe-on
        vals
        (every? :value)
-       ;u/probe-on
+       ;dev/probe-on
        ))
 
 (defn solver [solved]

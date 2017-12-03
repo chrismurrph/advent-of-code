@@ -220,4 +220,4 @@
 ;; Using all of geez stuff!
 ;;
 (defn x-7 []
-  (bfs starting-lab #_(parse-floors input) #_(u/probe-on (geez/retrieve)) geez/lab-succ #_generate-possible-moves destination-state? #_geez/lab-stop?))
+  (bfs starting-lab #_(parse-floors input) #_(dev/probe-on (geez/retrieve)) geez/lab-succ #_generate-possible-moves destination-state? #_geez/lab-stop?))

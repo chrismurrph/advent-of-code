@@ -161,7 +161,7 @@
     (mapcat identity (map next instructions))))
 
 ;; Mine are string based, so needed this when starting to use Bruce's functions
-(def trans (partial apply (comp #_u/probe-on str)))
+(def trans (partial apply (comp #_dev/probe-on str)))
 
 (defn execute-cmd-scramble [cmd acc arg-1 arg-2]
   (case cmd

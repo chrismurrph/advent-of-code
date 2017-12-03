@@ -66,8 +66,8 @@
   (some
     (fn [[x & xs]] (some #(> (- % x) 1) xs))
     (vals
-      (u/probe-on (apply merge-with concat
-                         (u/probe-on (map-indexed (fn [a b] {b [a]}) (partition 2 1 word))))))))
+      (dev/probe-on (apply merge-with concat
+                         (dev/probe-on (map-indexed (fn [a b] {b [a]}) (partition 2 1 word))))))))
 
 ;;
 ;; Given a bunch of numnbers in order from lowest -> highest, is there one that isn't right next to the first

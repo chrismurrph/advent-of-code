@@ -1,5 +1,6 @@
 (ns advent-2015.day13
   (:require [clojure.java.io :as io]
+            [dev :as dev]
             [utils :as u]))
 
 (def input
@@ -8,7 +9,7 @@
 (defn get-data [in]
   (->> in
        ;(take 8)
-       u/probe-off
+       dev/probe-off
        (map (partial re-matches #"(\w+) would (gain|lose) (\d+) happiness units by sitting next to (\w+)."))
        (map next)
        (map (juxt first (fn [[_ b c]]
@@ -55,8 +56,8 @@
         perms (u/permutations (conj part-2-names me))
         happinesses (map (comp calculator form-circle) perms)]
     (->> happinesses
-         u/probe-off
+         dev/probe-off
          (map (partial reduce +))
-         u/probe-off
+         dev/probe-off
          (apply max-and-min)
          )))

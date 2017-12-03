@@ -1,6 +1,6 @@
 (ns advent-2015.day08
   (:require [clojure.java.io :as io]
-            [utils :as u]))
+            [dev :as dev]))
 
 (def input
   (line-seq (io/reader (io/resource "day08"))))
@@ -25,15 +25,15 @@
 (defn memory-len [x]
   (- (-> (take-while not-empty
                      (iterate unescape-trunc x))
-         u/probe-off
+         dev/probe-off
          count)
      2))
 
 (defn part-1 []
   (->> input
        ;(take 1)
-       u/probe-off
-       (map #(- (count %) (u/probe-off (memory-len %) "mem len")))
+       dev/probe-off
+       (map #(- (count %) (dev/probe-off (memory-len %) "mem len")))
        (reduce + 0)))
 
 ;;
