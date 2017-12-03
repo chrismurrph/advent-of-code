@@ -1,8 +1,9 @@
-(ns advent-2017.day03
+(ns advent-2017.day03-1
   (:require [utils :as u]))
 
 ;;
-;; When number is even exiting from left. When odd from bottom right.
+;; When number is even exiting square from left. When odd from bottom right.
+;; Here we find the position where are existing the square.
 ;;
 (defn last-whole-num-root [n]
   (let [corners (->> (range 1 n)
@@ -43,18 +44,15 @@
 ;; For top-left? diff has two parts, down and right, that both go against what get from counted-sqrt.
 ;; We use the new length of a side, which is inc of counted-sqrt
 (defn from-corner-movement [top-left? counted-sqrt diff]
-  (let [side-length (inc counted-sqrt)]
-    (if top-left?
-      (cond-> []
-              (>= diff 1) (concat (lefts 1))
-              true (concat (downs (dec (min diff side-length))))
-              (> diff side-length) (concat (rights (- diff side-length)))
-              )
-      (cond-> []
-              (>= diff 1) (concat (rights 1))
-              true (concat (ups (dec (min diff side-length))))
-              (> diff side-length) (concat (lefts (- diff side-length)))
-              ))))
+  (let [side-length (inc counted-sqrt)
+        [horiz-f vert-f opp-horiz-f] (if top-left?
+                                       [lefts downs rights]
+                                       [rights ups lefts])]
+    (cond-> []
+            (>= diff 1) (concat (horiz-f 1))
+            true (concat (vert-f (dec (min diff side-length))))
+            (> diff side-length) (concat (opp-horiz-f (- diff side-length)))
+            )))
 
 (defn moves->position [moves]
   (reduce
@@ -68,17 +66,12 @@
         [last-sqrt idx counted-sqrt] (last-whole-num-root inced-n)
         last-escape (int (* last-sqrt last-sqrt))
         diff (- n idx)
-        ;times (quot diff last-sqrt)
-        ;remainder (rem diff last-sqrt)
         ]
     (assert (== counted-sqrt last-sqrt))
     {:n            n
      :counted-sqrt counted-sqrt
      :top-left?    (even? last-escape)
-     ;:last-sqrt last-sqrt
      :last-escape  last-escape
-     ;:times        times
-     ;:remainder    remainder
      :diff         diff
      }))
 
@@ -97,16 +90,17 @@
 ;; At 25 have counted 5 and edge length is 5
 ;; Odds are at bottom right corner of a square
 ;; Evens are also but getting back is one more down than across
-;; At 8 last escape was 4. This is even so is top left.
+;; At 8 last escape was 4, which is even so is top left.
 ;;
 (defn produce-table []
-  (let [table-length 20]
+  (let [table-length 10]
     (->> (for [n (range 1 (inc table-length))]
            (position-info n))
          (map info->answer)
-         (drop (- table-length 1))
+         ;(drop (- table-length 1))
          dev/pp
          )))
 
+;; ans 552
 (defn x-1 []
   (:distance (info->answer (position-info 325489))))
