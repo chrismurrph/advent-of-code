@@ -2,7 +2,8 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as s]
             [utils :as u]
-            [clojure.math.combinatorics :as combo]))
+            [clojure.math.combinatorics :as combo]
+            [clojure.test :refer :all]))
 
 (def ex [["aa" "bb" "cc" "dd" "jj"]
          ["aa" "bb" "cc" "dd" "aa"]
@@ -46,7 +47,7 @@
          (filter identity)
          count)))
 
-;; ans 318 is too high
+;; ans 251
 (defn x-2 []
   (let [input (get-input)]
     (->> input
@@ -60,8 +61,6 @@
                  ["iiii" "oiii" "ooii" "oooi" "oooo"]
                  ["oiii" "ioii" "iioi" "iiio"]])
 
-(defn x-3 []
-  (valid-passphrase-2? ["oiii" "ioii" "iioi" "iiio"]))
-
-(defn x-4 []
-  (combo/permutations "oiii"))
+(deftest examples-pass
+  (is (= [true false true true false]
+         (mapv valid-passphrase-2? test-input))))

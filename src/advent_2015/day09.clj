@@ -1,6 +1,7 @@
 (ns advent-2015.day09
   (:require [clojure.java.io :as io]
-            [utils :as u]))
+            [utils :as u]
+            [clojure.math.combinatorics :as combo]))
 
 (def input
   (line-seq (io/reader (io/resource "day09"))))
@@ -10,7 +11,7 @@
 (comment (println (str "Num places: " (count places))))
 
 (defn perms []
-  (u/permutations places))
+  (combo/permutations places))
 (comment (println (str "Num perms: " (count (perms)))))
 
 (defn distances []

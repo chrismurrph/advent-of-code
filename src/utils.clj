@@ -405,31 +405,6 @@
 ;      f
 ;      (recur (dec n) (* f n)))))
 
-(defn combinations-count [pop sz]
-  (/ (factorial pop) (* (factorial sz) (factorial (- pop sz)))))
-
-(defn permutations-count [pop sz]
-  (/ (factorial pop) (factorial (- pop sz))))
-
-(comment
-  "Exactly same as one below yet still doesn't work!!"
-  (defn combinations [population sz]
-    (cond
-      (empty? population)
-      '()
-
-      (zero? sz)
-      '(())
-
-      :default
-      (let []
-            ;rest-of-combinations (combinations (rest population) (dec sz))
-            ;now-multiplied-with-first (mapv #(conj % (first population)) (combinations (rest population) (dec sz)))
-            ;really-rest (combinations (rest population) sz)
-
-        (concat (map #(cons (first population) %) (combinations (rest population) (dec sz)))
-                (combinations (rest population) sz))))))
-
 ;;
 ;; Each combination returned is in a specific order and you don't get other
 ;; combinations of that order 'mixed up'. Once a position for an element is
@@ -443,7 +418,8 @@
     :else (concat (mapv #(cons (first population) %) (combinations (rest population) (dec sz)))
                   (combinations (rest population) sz))))
 
-(defn permutations [s]
+;; Doesn't work for strings
+#_(defn permutations [s]
   (lazy-seq
     (if (seq (rest s))
       (apply concat (for [x s]

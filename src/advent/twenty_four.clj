@@ -1,7 +1,8 @@
 (ns advent.twenty-four
   (:require [utils :as u]
             [clojure.string :as s]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.math.combinatorics :as combo]))
 
 (def sample-layout '("###########"
                       "#0.1.....2#"
@@ -129,7 +130,7 @@
 
 (defn least-steps [return-back? distances path]
   (let [filter-fn (if return-back? #(= 0 (last %)) (constantly true))]
-    (->> (u/permutations path)
+    (->> (combo/permutations path)
          (map #(conj % 0))
          ; Should solve 2nd
          (filter filter-fn)

@@ -1,7 +1,8 @@
 (ns advent-2015.day13
   (:require [clojure.java.io :as io]
             [dev :as dev]
-            [utils :as u]))
+            [utils :as u]
+            [clojure.math.combinatorics :as combo]))
 
 (def input
   (line-seq (io/reader (io/resource "day13"))))
@@ -53,7 +54,7 @@
                    distinct)
         part-2-names (conj names me)
         _ (println part-2-names)
-        perms (u/permutations (conj part-2-names me))
+        perms (combo/permutations (conj part-2-names me))
         happinesses (map (comp calculator form-circle) perms)]
     (->> happinesses
          dev/probe-off
