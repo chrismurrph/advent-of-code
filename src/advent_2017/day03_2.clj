@@ -1,8 +1,6 @@
 (ns advent-2017.day03-2
-  (:require [advent-2017.day03-1a :as first-part-poor]
-            [advent-2017.day03-1b :as good]
-            [clojure.test :refer :all]
-            [utils :as u]))
+  (:require [advent-2017.day03-1 :as good]
+            [clojure.test :refer :all]))
 
 (def default {[0 0] 1})
 (def -pos->value (atom default))
@@ -13,12 +11,7 @@
 (defn set-value [pos value]
   (swap! -pos->value assoc pos value))
 
-(defn ord->position-poor [ord]
-  (-> (first-part-poor/position-info ord)
-      first-part-poor/info->answer
-      :position))
-
-(defn ord->position-good [iterations]
+(defn ord->position [iterations]
   (fn [ord]
     (let [at-ord (nth iterations ord)]
       (:pos at-ord))))
@@ -47,7 +40,7 @@
 (defn x-2 []
   (reset! -pos->value default)
   (let [iterations (iterate good/iteree good/start-state)
-        ord->position (ord->position-good iterations)]
+        ord->position (ord->position iterations)]
     (->> (range)
          (map inc)
          (map ord->position)
