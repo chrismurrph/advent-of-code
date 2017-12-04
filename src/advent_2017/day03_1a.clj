@@ -1,4 +1,4 @@
-(ns advent-2017.day03-1
+(ns advent-2017.day03-1a
   (:require [utils :as u]))
 
 ;;

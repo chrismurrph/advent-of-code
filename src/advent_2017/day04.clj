@@ -3,13 +3,8 @@
             [clojure.string :as s]
             [utils :as u]
             [clojure.math.combinatorics :as combo]
-            [clojure.test :refer :all]))
-
-(def ex [["aa" "bb" "cc" "dd" "jj"]
-         ["aa" "bb" "cc" "dd" "aa"]
-         ["aa" "bb" "cc" "dd" "kk"]])
-
-;; (def input (line-seq (io/reader (io/resource "day02"))))
+            [clojure.test :refer :all]
+            [stopwatch :as sw]))
 
 (defn get-input []
   (->> (io/resource "2017/day04")
@@ -37,7 +32,15 @@
     (boolean (some #(apply is-anagram? %) combos))))
 
 (def valid-passphrase-1? (complement has-dup?))
-(def valid-passphrase-2? (complement any-anagrams?))
+
+;; 18151 msecs
+(def valid-passphrase-2a? (complement any-anagrams?))
+
+;; Way recommended in slack will be a ton faster
+;; 10 ms !!!!
+(defn valid-passphrase-2b? [xs]
+  (let [each-sorted (map sort xs)]
+    (= (count (distinct each-sorted)) (count each-sorted))))
 
 ;; ans 466
 (defn x-1 []
@@ -49,11 +52,13 @@
 
 ;; ans 251
 (defn x-2 []
-  (let [input (get-input)]
+  (let [input (get-input)
+        take-elapsed (sw/time-probe-hof "anagrams")]
     (->> input
-         (map #(valid-passphrase-2? %))
+         (map #(valid-passphrase-2b? %))
          (filter identity)
-         count)))
+         count
+         take-elapsed)))
 
 (def test-input [["abcde" "fghij"]
                  ["abcde" "xyz" "ecdab"]
@@ -63,4 +68,4 @@
 
 (deftest examples-pass
   (is (= [true false true true false]
-         (mapv valid-passphrase-2? test-input))))
+         (mapv valid-passphrase-2b? test-input))))

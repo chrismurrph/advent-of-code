@@ -1,5 +1,5 @@
 (ns advent-2017.day03-2
-  (:require [advent-2017.day03-1 :as first-part]
+  (:require [advent-2017.day03-1a :as first-part]
             [clojure.test :refer :all]))
 
 (def default {[0 0] 1})
