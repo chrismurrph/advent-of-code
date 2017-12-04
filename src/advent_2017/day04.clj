@@ -1,6 +1,8 @@
 (ns advent-2017.day04
   (:require [clojure.java.io :as io]
-            [clojure.string :as s]))
+            [clojure.string :as s]
+            [utils :as u]
+            [clojure.math.combinatorics :as combo]))
 
 (def ex [["aa" "bb" "cc" "dd" "jj"]
          ["aa" "bb" "cc" "dd" "aa"]
@@ -18,15 +20,48 @@
        dev/probe-off
        ))
 
-(defn has-dup? [ex]
-  (->> (frequencies ex)
+(defn has-dup? [xs]
+  (->> (frequencies xs)
        vals
        (filter #(> % 1))
        seq))
 
+(defn is-anagram? [x y]
+  (let [perms (set (map s/join (combo/permutations x)))]
+    ;(println "To test if" y "is in one of" perms "from" x)
+    (boolean (perms y))))
+
+(defn any-anagrams? [xs]
+  (let [combos (u/combinations xs 2)]
+    (boolean (some #(apply is-anagram? %) combos))))
+
+(def valid-passphrase-1? (complement has-dup?))
+(def valid-passphrase-2? (complement any-anagrams?))
+
+;; ans 466
 (defn x-1 []
   (let [input (get-input)]
     (->> input
-         (map #((complement has-dup?) %))
+         (map #(valid-passphrase-1? %))
          (filter identity)
          count)))
+
+;; ans 318 is too high
+(defn x-2 []
+  (let [input (get-input)]
+    (->> input
+         (map #(valid-passphrase-2? %))
+         (filter identity)
+         count)))
+
+(def test-input [["abcde" "fghij"]
+                 ["abcde" "xyz" "ecdab"]
+                 ["a" "ab" "abc" "abd" "abf" "abj"]
+                 ["iiii" "oiii" "ooii" "oooi" "oooo"]
+                 ["oiii" "ioii" "iioi" "iiio"]])
+
+(defn x-3 []
+  (valid-passphrase-2? ["oiii" "ioii" "iioi" "iiio"]))
+
+(defn x-4 []
+  (combo/permutations "oiii"))
