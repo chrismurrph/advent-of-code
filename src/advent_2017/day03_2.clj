@@ -1,6 +1,8 @@
 (ns advent-2017.day03-2
-  (:require [advent-2017.day03-1a :as first-part]
-            [clojure.test :refer :all]))
+  (:require [advent-2017.day03-1a :as first-part-poor]
+            [advent-2017.day03-1b :as good]
+            [clojure.test :refer :all]
+            [utils :as u]))
 
 (def default {[0 0] 1})
 (def -pos->value (atom default))
@@ -11,10 +13,15 @@
 (defn set-value [pos value]
   (swap! -pos->value assoc pos value))
 
-(defn ord->position [ord]
-  (-> (first-part/position-info ord)
-      first-part/info->answer
+(defn ord->position-poor [ord]
+  (-> (first-part-poor/position-info ord)
+      first-part-poor/info->answer
       :position))
+
+(defn ord->position-good [iterations]
+  (fn [ord]
+    (let [at-ord (nth iterations ord)]
+      (:pos at-ord))))
 
 (def outliers [[0 1] [1 1] [1 0] [1 -1] [0 -1] [-1 -1] [-1 0] [-1 1]])
 
@@ -36,14 +43,17 @@
         (set-value pos new-val)
         new-val))))
 
+;; ans: 330785
 (defn x-2 []
   (reset! -pos->value default)
-  (->> (range)
-       (map inc)
-       (map ord->position)
-       (map calc-position-value!)
-       (drop-while #(<= % 325489))
-       first))
+  (let [iterations (iterate good/iteree good/start-state)
+        ord->position (ord->position-good iterations)]
+    (->> (range)
+         (map inc)
+         (map ord->position)
+         (map calc-position-value!)
+         (drop-while #(<= % 325489))
+         first)))
 
 (deftest get-and-set
   (reset! -pos->value default)
