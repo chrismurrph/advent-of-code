@@ -9,18 +9,6 @@
 (def west [-1 0])
 (def east [1 0])
 
-(defn ups [n] (repeat n north))
-(defn downs [n] (repeat n south))
-(defn lefts [n] (repeat n west))
-(defn rights [n] (repeat n east))
-
-(defn moves->position [moves]
-  (reduce
-    (fn [acc ele]
-      (mapv + acc ele))
-    [0 0]
-    moves))
-
 (def directions
   {0 north
    1 east
@@ -40,36 +28,36 @@
     3
     (dec dir)))
 
-(defn iteree [{:keys [n walk-straight pos dir side-size times-turned] :as st}]
-  (let [left-turn? (and (= side-size (inc walk-straight)) (< times-turned 2))
-        new-dir (if left-turn? (turn-left dir) dir)
-        new-pos (move pos new-dir)
-        new-walk-straight (if left-turn? 0 (inc walk-straight))
-        new-side-size (cond-> side-size
-                              (>= times-turned 2) inc)
-        ]
-    {:n             (inc n)
-     :walk-straight new-walk-straight
-     :pos           new-pos
-     :dir           new-dir
-     :side-size     new-side-size
-     :times-turned  (cond-> times-turned
-                            left-turn? inc)}))
+(defn iteree [{:keys [n pos dir already-visited]}]
+  (let [new-already-visited (conj already-visited pos)
+        at-left (move pos (turn-left dir))
+        left-occupied? (new-already-visited at-left)
+        [new-pos new-dir] (if left-occupied?
+                            [(move pos dir) dir]
+                            [at-left (turn-left dir)])]
+    {:n   (inc n)
+     :pos new-pos
+     :dir new-dir
+     :already-visited new-already-visited
+     }))
 
-(def start-state {:n 1
-                  :walk-straight 1
-                  :pos [0 0]
-                  :dir 1
-                  :side-size 2
-                  :times-turned 0})
+;; Facing south so first turn will be to the east
+(def start-state {:n               1
+                  :pos             [0 0]
+                  :dir             2
+                  ;; Only need to keep the most recent of these (however we keep all)
+                  :already-visited #{}
+                  })
 
 (defn finished? [{:keys [n]}]
-  (= 3 n))
+  (= 325489 n))
 
 ;; ans 552
 (defn x-1 []
   (->> (iterate iteree start-state)
-       (take 3)
-       ;(drop-while (complement finished?))
-       ;first
+       (drop-while (complement finished?))
+       first
+       :pos
+       (map u/abs)
+       (apply +)
        ))
