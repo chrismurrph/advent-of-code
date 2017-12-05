@@ -18,7 +18,7 @@
 ;;
 (defn time-probe-hof
   ([named]
-    (time-probe-hof named true true))
+    (time-probe-hof named true false))
   ([named pr-every? show-number?]
    (let [last-elapsed (atom 0)
          ;; Good to number as quick ones will
@@ -28,7 +28,9 @@
        (let [elapsed (elapsed-f)
              diff (- elapsed @last-elapsed)]
          (when (or pr-every? (> diff 1))
-           (println (if show-number? @iter "") named diff "msecs"))
+           (if show-number?
+             (println @iter named diff "msecs")
+             (println named diff "msecs")))
          (reset! last-elapsed elapsed)
          (swap! iter inc))
        x))))

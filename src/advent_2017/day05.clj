@@ -1,6 +1,8 @@
 (ns advent-2017.day05
   (:require [clojure.string :as s]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [stopwatch :as sw]
+            [utils :as u]))
 
 (defn get-input []
   (->> (io/resource "2017/day05")
@@ -14,8 +16,10 @@
     (or (neg? n) (>= n size))))
 
 ;;
-;; n is where are in instructions, with 0 being first instruction
-;; Examine content at n which will inc that contents and change n for next time
+;; n is where are in instructions, with 0 being first instruction.
+;; Examine content at n which will inc that content and change n for next time.
+;; step only required because the question, in both parts, is:
+;; "How many steps does it take to reach the exit?"
 ;;
 (defn transition-1 [[n instructions step]]
   (let [content (get instructions n)
@@ -24,12 +28,15 @@
     [new-n new-instructions (inc step)]))
 
 (defn solve [transition-f]
-  (let [in #_[0 3 0 1 -3] (get-input)
+  (let [tell-elapsed (sw/time-probe-hof "strange jumps")
+        in #_[0 3 0 1 -3] (get-input)
         finished? (finished-hof? (count in))
         start-state [0 in 0]]
     (->> (iterate transition-f start-state)
          (drop-while (complement finished?))
-         first)))
+         first
+         u/third
+         tell-elapsed)))
 
 ;; ans: 326618
 (defn x-1 []
@@ -48,5 +55,6 @@
     [new-n new-instructions (inc step)]))
 
 ;; ans: 21841249
+;; 7296 msecs
 (defn x-2 []
   (solve transition-2))

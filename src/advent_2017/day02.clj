@@ -1,7 +1,7 @@
 (ns advent-2017.day02
   (:require [clojure.java.io :as io]
             [clojure.string :as s]
-            [utils :as u]))
+            [clojure.math.combinatorics :as combo]))
 
 (def ex [[5 1 9 5]
          [7 5 3]
@@ -28,7 +28,7 @@
        ))
 
 (defn row->evenly-divided [xs]
-  (->> (u/combinations xs 2)
+  (->> (combo/combinations xs 2)
        (some (fn [xy]
                (let [res (apply / (sort-by - xy))]
                  (when (int? res)
