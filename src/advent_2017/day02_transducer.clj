@@ -42,5 +42,5 @@
   (let [input (get-input)]
     (->> input
          (map #(u/combinations % 2))
-         (map row->evenly-divided-2)
+         (map row->evenly-divided-1)
          (reduce +))))

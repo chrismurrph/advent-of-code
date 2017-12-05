@@ -13,18 +13,18 @@
     [(take half-way xs) (drop half-way xs)]))
 
 (defn x-1 []
-  (let [input #_(str "1122") (slurp (io/resource "2017/day01"))
-        fconj (flip conj)]
+  (let [input (slurp (io/resource "2017/day01"))
+        f-conj (flip conj)]
     (->> input
          (mapv char->int)
-         (fconj (-> input first char->int))
+         (f-conj (-> input first char->int))
          (partition 2 1)
          (filter #(apply = %))
          (map first)
          (reduce +))))
 
 (defn x-2 []
-  (let [input #_(str "1122") (slurp (io/resource "2017/day01"))]
+  (let [input (slurp (io/resource "2017/day01"))]
     (->> input
          (mapv char->int)
          split-in-half

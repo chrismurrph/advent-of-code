@@ -10,7 +10,6 @@
   (->> (io/resource "2017/day04")
        slurp
        s/split-lines
-       ;(take 2)
        dev/probe-off
        (mapv #(s/split % #" "))
        dev/probe-off

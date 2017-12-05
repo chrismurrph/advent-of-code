@@ -42,7 +42,7 @@
 ;; transducer so read normal way round
 ;; re-seq #"\d" - puts decimals into a sequence
 ;; Cool b/c get co-ords, size and used in one go.
-;; So first mapentry will be [0 0] [86 73]
+;; So first map-entry will be [0 0] [86 73]
 ;; This map is :data in state.
 ;; Notice that it goes by columns, hence need transpose to represent to humans (see view-grid)
 ;;

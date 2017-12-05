@@ -19,10 +19,6 @@
   (let [dir-delta (directions new-dir)]
     (mapv + from-pos dir-delta)))
 
-;; up is 0
-;; east is 1
-;; down is 2
-;; west is 3
 (defn turn-left [dir]
   (if (zero? dir)
     3
@@ -30,7 +26,7 @@
 
 (defn iteree [{:keys [n pos dir already-visited]}]
   (let [new-already-visited (conj already-visited pos)
-        at-left (move pos (turn-left dir))
+        at-left (->> dir turn-left (move pos))
         left-occupied? (new-already-visited at-left)
         [new-pos new-dir] (if left-occupied?
                             [(move pos dir) dir]
