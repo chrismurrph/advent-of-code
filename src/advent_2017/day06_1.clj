@@ -1,4 +1,4 @@
-(ns advent-2017.day06
+(ns advent-2017.day06-1
   (:require [stopwatch :as sw]
             [clojure.string :as s]
             [clojure.java.io :as io]
@@ -38,6 +38,7 @@
                                        distribute-over-idxs)]
       [updated-memory-banks (conj already-done memory-bank-blocks)])))
 
+;; ans: 3156
 (defn x-1 []
   (let [tell-elapsed (sw/time-probe-hof "memory blocks")
         in #_[0 2 7 0] (get-input)
