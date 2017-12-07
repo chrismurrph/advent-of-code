@@ -110,8 +110,14 @@
                     idx))
                 coll))
 
-(defn drop-nth [n coll]
-  (keep-indexed #(if (not= %1 n) %2) coll))
+(defn remove-in [idx v]
+  (vec (concat (subvec v 0 idx)
+               (when (not= idx (count v))
+                 (subvec v (inc idx))))))
+
+(defn remove-indexes [idxs v]
+  (assert (vector? v))
+  (reduce #(remove-in %2 %1) v (map-indexed #(- %2 %1) idxs)))
 
 (defn index-of [coll desired]
   (first (keep-indexed (fn [idx val] (when (= val desired) idx)) coll)))
