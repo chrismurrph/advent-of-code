@@ -1,6 +1,7 @@
 (ns utils
   (:require [clojure.string :as s]
-            [dev :as dev]))
+            [dev :as dev]
+            [clojure.test :refer :all]))
 
 (defn str->number [x]
   (when-let [num (re-matches #"-?\d+\.?\d*" x)]
@@ -99,6 +100,21 @@
 
 (defn not-blank? [x]
   (or (boolean? x) (and x (not= x ""))))
+
+(defn trim-trailing-comma [s]
+  (when s
+    (let [idx (s/index-of s ",")]
+      (if idx
+        (subs s 0 idx)
+        s))))
+
+(defn strip-surrounding-brackets [s]
+  (when s
+    (if (and (pos? (count s))
+             (= \( (first s))
+             (= \) (last s)))
+      (s/join (-> s next butlast))
+      s)))
 
 ;;
 ;; Returns the index positions of those that satisfy the pred(icate)
@@ -506,3 +522,15 @@
           times)
         (let [now-tested (into already-tested newly-generated)]
           (recur now-tested (into #{} (remove already-tested newly-generated)) (+ total-visited (count last-round)) (inc times)))))))
+
+;; TESTS
+
+(deftest test-remove-indexes
+         (let [test-input ["brexb" " " "(75)" " " "-> " "tbmiv, "]]
+           (is (= ["brexb" "(75)" "tbmiv, "]
+                  (remove-indexes [1 3 4] test-input)))))
+
+(deftest test-ignores-when-no
+         (is (= "tbmiv"
+                (trim-trailing-comma "tbmiv"))))
+

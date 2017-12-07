@@ -2,7 +2,8 @@
   (:require [utils :as u]
             [clojure.string :as s]
             [clojure.java.io :as io]
-            [clojure.test :refer :all]))
+            [clojure.test :refer :all]
+            [clojure.set :as set]))
 
 (defn get-example-input []
   (->> (io/resource "2017/day07_example")
@@ -17,40 +18,23 @@
        ))
 
 ;;
-;; I don't know how to do repeating groups in this regex system
+;; I don't know how to do repeating groups in Clojure's regex system
 ;;
 (def regex-1 #"(\S+)( )(\(\d+\))( )?(-> )?(\S+, )?(\S+, )?(\S+, )?(\S+, )?(\S+, )?(\S+, )?(\S+, )?(\S+, )?(\S+, )?(\S+, )?(\S+, )?")
 (def regex-2 #"(\S+)( )(\(\d+\))( )(-> )(\S+, )+")
 
-(defn trim-trailing-comma [s]
-  (when s
-    (let [idx (s/index-of s ",")]
-      (if idx
-        (subs s 0 idx)
-        s))))
-
-(defn strip-brackets [s]
-  (if (and (pos? (count s))
-           (= \( (first s))
-           (= \) (last s)))
-    (s/join (-> s next butlast))
-    s))
-
 (defn bracketed-number->int [s]
-  ((comp #(Integer/parseInt %) strip-brackets) s))
+  ((comp #(Integer/parseInt %) u/strip-surrounding-brackets) s))
 
 (defn parse [line]
-  (->> (re-matches regex-1 (dev/probe-off (if (s/includes? line "->")
-                                            (s/join (concat line ", "))
-                                            line)))
+  (->> (re-matches regex-1 (if (s/includes? line "->")
+                             (s/join (concat line ", "))
+                             line))
        next
        vec
-       dev/probe-off
        ((partial u/remove-indexes [1 3 4]))
-       dev/probe-off
-       (keep trim-trailing-comma)
+       (keep u/trim-trailing-comma)
        ((fn [line]
-          ;(println "line" line)
           ((juxt first (fn [line]
                          ((juxt (fn [line]
                                   (-> line second bracketed-number->int))
@@ -85,37 +69,88 @@
                        [k (second v)]))
                 (into {}))]
     (dev/pp in)
-    (->> (tsort in))))
+    (tsort in)))
+
+(defn program-weight-hof [m]
+  (fn inner [program-name]
+    (let [[weight disk-program-names] (get m program-name)]
+      (let [program-weights (map #(second (inner %)) disk-program-names)
+            disk-weight (reduce + 0 program-weights)]
+        [weight (+ weight disk-weight)]))))
+
+;;
+;; Idea was to keep increasing nth, starting at 1. As it happened 2 gave us the answer. To deal
+;; with any data we will just need to reduce over (range). Tomorrow...
+;;
+(defn highest-possibly-unbalanced [top-sorted]
+  ;; The first group doesn't depend on anything (no discs). May need to go for 2nd 3rd etc later...
+  (nth top-sorted 2))
+
+(defn ameliorate-group-hof [find-weight]
+  (fn [group]
+    (let [group (assoc group :item-weights (->> (:items group)
+                                                (map (juxt identity #(find-weight %)))
+                                                (into {})))]
+      group
+      #_(when (not (apply = weights))
+          (let [bad-weights weights]
+            (- (apply max bad-weights) (apply min bad-weights)))))))
+
+(defn unbalanced? [group]
+  (let [weights (->> group :item-weights vals (map second))]
+    (not (apply = weights))))
+
+(defn form-groups [m]
+  (->> m
+       (map (fn [[k [weight items]]]
+              {:head   k
+               :weight weight
+               :items  items}))))
+
+(defn x-2 []
+  (let [parsed-in (->> (get-input)
+                       (map parse))
+        parsed-in-m (into {} parsed-in)
+        no-weights-map (->> parsed-in
+                            (map (fn [[k v]]
+                                   [k (second v)]))
+                            (into {}))
+        top-sorted (tsort no-weights-map)
+        candidates (set (highest-possibly-unbalanced top-sorted))
+        ;; All groups for which all the members are in candidates. This gives
+        ;; us the top level but one groups (in the first instance).
+        groups (->> (form-groups parsed-in-m)
+                    dev/probe-off
+                    (filter #(empty? (set/difference (:items %) candidates)))
+                    (filter #(-> % :items seq)))
+        collect-info (ameliorate-group-hof (program-weight-hof parsed-in-m))
+        results (->> groups
+                     (map collect-info)
+                     dev/probe-off
+                     (filter unbalanced?))]
+    ;(dev/pp parsed-in-m)
+    ;(dev/first-crash-if-more results)
+    (dev/pp results)
+    ))
 
 ;;
 ;; TESTS
 ;;
 
 (def example-line-1 "brexb (75) -> tbmiv")
-(def example-line-2 "lovxjut (90) -> fmvna, ddneaes, sakwdmk, lqmoz")
-(def example-line-3 "toprb (282) -> dzyvcxt, xlyngh, tkhbr, avufn, uhhiz, tmtqgn")
-(def example-line-4 "cfkcj (74)")
+(def example-line-2 "cfkcj (74)")
 
 (deftest weight-from-bracketed
   (is (= 74
          (bracketed-number->int "(74)"))))
 
-(deftest remove-indexes
-  (let [test-input ["brexb" " " "(75)" " " "-> " "tbmiv, "]]
-    (is (= ["brexb" "(75)" "tbmiv, "]
-           (u/remove-indexes [1 3 4] test-input)))))
-
 (deftest depends-on-none
   (is (= ["cfkcj" [74 #{}]]
-         (parse example-line-4))))
+         (parse example-line-2))))
 
 (deftest depends-on-one
   (is (= ["brexb" [75 #{"tbmiv"}]]
          (parse example-line-1))))
-
-(deftest ignores-when-no
-  (is (= "tbmiv"
-         (trim-trailing-comma "tbmiv"))))
 
 (deftest parses-okay
   (is (= [["cfkcj" [74 #{}]]
