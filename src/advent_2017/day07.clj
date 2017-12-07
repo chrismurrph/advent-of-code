@@ -49,7 +49,7 @@
           ((juxt first #(-> % next set)) line)))))
 
 ;;
-;; Gives 'compile order', so last one will be bottom of tree
+;; Gives 'compile order', so last one will be root of tree
 ;;
 (defn tsort [m]
   (let [depth (fn depth [x]
@@ -58,12 +58,22 @@
                   (->> x m (map depth) (apply max) inc)))]
     (map val (sort-by key (group-by depth (keys m))))))
 
+;; ans: bsfpjtc
 (defn x-1 []
   (let [in (->> (get-input)
                 (map parse)
                 (into {}))]
     ;(dev/pp in)
-    (tsort in)))
+    (->> (tsort in)
+         last
+         last)))
+
+(defn x-2 []
+  (let [in (->> (get-example-input)
+                (map parse)
+                (into {}))]
+    (dev/pp in)
+    (->> (tsort in))))
 
 ;;
 ;; TESTS
