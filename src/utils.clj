@@ -110,6 +110,9 @@
                     idx))
                 coll))
 
+(defn drop-nth [n coll]
+  (keep-indexed #(if (not= %1 n) %2) coll))
+
 (defn index-of [coll desired]
   (first (keep-indexed (fn [idx val] (when (= val desired) idx)) coll)))
 

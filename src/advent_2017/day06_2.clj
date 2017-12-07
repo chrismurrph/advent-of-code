@@ -23,20 +23,18 @@
         first-idx (utils/index-of blocks biggest)]
     [first-idx biggest]))
 
-(defn transition-hof [num-memory-banks]
-  (fn [[memory-bank-blocks already-done]]
-    (let [[biggest-idx num-at-biggest] (biggest-block memory-bank-blocks)
-          distribute-over-idxs (->> (mapcat identity (repeat (range num-memory-banks)))
-                                    (drop (inc biggest-idx))
-                                    (take num-at-biggest))
-          memory-banks-with-biggest-emptied (assoc memory-bank-blocks biggest-idx 0)
-          updated-memory-banks (reduce (fn [banks idx]
-                                         (update banks idx inc))
-                                       memory-banks-with-biggest-emptied
-                                       distribute-over-idxs)
-          history (conj already-done memory-bank-blocks)]
-      ;(println "history" history)
-      [updated-memory-banks history])))
+(defn redistribute-hof [num-memory-banks]
+  (fn [[before-memory-banks already-done]]
+    (let [[biggest-idx num-at-biggest] (biggest-block before-memory-banks)
+          after-memory-banks (reduce (fn [banks idx]
+                                       (update banks idx inc))
+                                     (assoc before-memory-banks biggest-idx 0)
+                                     (->> #_(mapcat identity (repeat (range num-memory-banks)))
+                                          (cycle (range num-memory-banks))
+                                          (drop (inc biggest-idx))
+                                          (take num-at-biggest)))
+          history (conj already-done before-memory-banks)]
+      [after-memory-banks history])))
 
 ;; Now that we know the x-2 requirement, have re-coded x-1
 ;; to no longer use a set for the history
@@ -45,7 +43,7 @@
   (let [tell-elapsed (sw/time-probe-hof "memory blocks")
         in #_[0 2 7 0] (get-input)
         start-state [in []]
-        transition (transition-hof (count in))]
+        transition (redistribute-hof (count in))]
     (->> (iterate transition start-state)
          (drop-while (complement finished?))
          first
@@ -58,7 +56,7 @@
   (let [tell-elapsed (sw/time-probe-hof "memory blocks")
         in #_[0 2 7 0] (get-input)
         start-state [in []]
-        transition (transition-hof (count in))]
+        transition (redistribute-hof (count in))]
     (->> (iterate transition start-state)
          (drop-while (complement finished?))
          first
@@ -70,7 +68,7 @@
 
 (deftest first-wins
   (is (= [0 2 3 4]
-         (first ((transition-hof 4) [[3 1 2 3] []])))))
+         (first ((redistribute-hof 4) [[3 1 2 3] []])))))
 
 (deftest first-chosen
   (let [[biggest-idx _] (biggest-block [3 1 2 3])]

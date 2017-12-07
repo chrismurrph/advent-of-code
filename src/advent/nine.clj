@@ -205,7 +205,10 @@
 ;; Always the missing piece when dealing with strings and sequences of chars
 ;;
 (defn lazy->str [l]
-  (apply str l))
+  (apply str l)
+  ; ? just use join instead??
+  ;(s/join l)
+  )
 
 ;;
 ;; Returns [[cnt rpt] s], where s is what's left after the directive i.e. what to apply the directive to
