@@ -1,102 +1,89 @@
 (ns advent-2017.day08
   (:require [clojure.java.io :as io]
-            [clojure.string :as s]
-            [utils :as u]))
+            [clojure.string :as s]))
 
 (defn get-example-input []
   (->> (io/resource "2017/day08_example")
        slurp
-       s/split-lines
-       ))
+       s/split-lines))
 
 (defn get-input []
   (->> (io/resource "2017/day08")
        slurp
-       s/split-lines
-       ))
+       s/split-lines))
 
 ;; b inc 5 if a > 1
-(def regex-1 #"(\S+) (\S+) (-?\d+) if (\S+) (\S+) (-?\d+)")
+(def instruction-regex #"(\S+) (\S+) (-?\d+) if (\S+) (\S+) (-?\d+)")
 
 (defn make-instruction [[register op amount if-register comp num]]
   (cond-> {:register    register
            :op          op
            :if-register if-register
-           :comp        comp
-           }
+           :comp        comp}
           amount (assoc :amount (Integer/parseInt amount))
-          num (assoc :num (Integer/parseInt num))
-          ))
+          num (assoc :num (Integer/parseInt num))))
 
 (defn parse [line]
-  (->> (re-find regex-1 line)))
+  (->> (re-find instruction-regex line)))
+
+(def op-name->fn
+  {"inc" +
+   "dec" -})
 
 (defn operation [op amount]
   (fn [old-register-value]
     (let [old-register-value (or old-register-value 0)]
-      (condp = op
-        "inc" (+ old-register-value amount)
-        "dec" (- old-register-value amount)
-        ))))
+      ((op-name->fn op) old-register-value amount))))
+
+(def maximum (fnil max Integer/MIN_VALUE))
+
+(def comp->fn
+  {">"  >
+   "<"  <
+   ">=" >=
+   "<=" <=
+   "==" =
+   "!=" not=})
 
 ;;
 ;; memory is just a map of register -> value
 ;;
-(defn process-instruction [[memory instructions highest]]
-  (let [{:keys [register op amount if-register comp num]} (first instructions)
-        if-register-value (or (get memory if-register) 0)
-        cond-triggered? (condp = comp
-                          ">" (> if-register-value num)
-                          "<" (< if-register-value num)
-                          ">=" (>= if-register-value num)
-                          "<=" (<= if-register-value num)
-                          "==" (= if-register-value num)
-                          "!=" (not= if-register-value num)
-                          )
+(defn process-instruction [[memory
+                            [{:keys [register op amount if-register comp num]} & rest-instructions]
+                            kept-highest]]
+  (let [update-register-f (operation op amount)
         new-memory (cond-> memory
-                           cond-triggered? (update register #((operation op amount) %)))
-        new-memory-vals (-> new-memory vals vec)
-        ;_ (println "new-memory-vals" new-memory-vals)
-        new-highest (if (seq new-memory-vals)
-                      (apply max new-memory-vals)
-                      -9000)
-        ;_ (println "highest" highest)
-        ;_ (println "new-highest" new-highest)
-        kept-highest (max (or highest -9000) (or new-highest -9000))
-        ;_ (println "next-highest" next-highest)
-        ]
-    [new-memory (rest instructions) kept-highest]))
 
-(defn ending-state? [[memory instructions kept-highest]]
+                           ((comp->fn comp) (or (get memory if-register) 0) num)
+                           (update register update-register-f))
+        new-highest (apply maximum (vals new-memory))
+        new-kept-highest (maximum kept-highest new-highest)
+        ]
+    [new-memory rest-instructions new-kept-highest]))
+
+(defn ending-state? [[_ instructions _]]
   (empty? instructions))
+
+(defn iterations [input]
+  (let [in (->> input
+                (map parse)
+                (map next)
+                (map make-instruction)
+                )]
+    (->> (iterate process-instruction [{} in])
+         (drop-while (complement ending-state?)))))
 
 ;; ans: 5946
 (defn x-1 []
-  (let [in (->> (get-input)
-                (map parse)
-                (map next)
-                dev/probe-off
-                (map make-instruction)
-                )]
-    ;(dev/pp in)
-    (->> (iterate process-instruction [{} in])
-         (drop-while (complement ending-state?))
-         ffirst
-         vals
-         (apply max))))
+  (->> (iterations (get-input))
+       ffirst
+       vals
+       (apply max)))
 
+;; ans: 6026
 (defn x-2 []
-  (let [in (->> (get-input)
-                (map parse)
-                (map next)
-                dev/probe-off
-                (map make-instruction)
-                )]
-    ;(dev/pp in)
-    (->> (iterate process-instruction [{} in])
-         (drop-while (complement ending-state?))
-         first
-         (drop 2)
-         first
-         )))
+  (->> (iterations (get-input))
+       first
+       (drop 2)
+       first))
 
