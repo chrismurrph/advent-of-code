@@ -42,7 +42,7 @@
 ;;
 ;; memory is just a map of register -> value
 ;;
-(defn process-instruction [[memory instructions]]
+(defn process-instruction [[memory instructions highest]]
   (let [{:keys [register op amount if-register comp num]} (first instructions)
         if-register-value (or (get memory if-register) 0)
         cond-triggered? (condp = comp
@@ -53,15 +53,24 @@
                           "==" (= if-register-value num)
                           "!=" (not= if-register-value num)
                           )
-        ;_ (println "cond-triggered?" cond-triggered?)
         new-memory (cond-> memory
                            cond-triggered? (update register #((operation op amount) %)))
+        new-memory-vals (-> new-memory vals vec)
+        ;_ (println "new-memory-vals" new-memory-vals)
+        new-highest (if (seq new-memory-vals)
+                      (apply max new-memory-vals)
+                      -9000)
+        ;_ (println "highest" highest)
+        ;_ (println "new-highest" new-highest)
+        kept-highest (max (or highest -9000) (or new-highest -9000))
+        ;_ (println "next-highest" next-highest)
         ]
-    [new-memory (rest instructions)]))
+    [new-memory (rest instructions) kept-highest]))
 
-(defn ending-state? [[memory instructions]]
+(defn ending-state? [[memory instructions kept-highest]]
   (empty? instructions))
 
+;; ans: 5946
 (defn x-1 []
   (let [in (->> (get-input)
                 (map parse)
@@ -75,4 +84,19 @@
          ffirst
          vals
          (apply max))))
+
+(defn x-2 []
+  (let [in (->> (get-input)
+                (map parse)
+                (map next)
+                dev/probe-off
+                (map make-instruction)
+                )]
+    ;(dev/pp in)
+    (->> (iterate process-instruction [{} in])
+         (drop-while (complement ending-state?))
+         first
+         (drop 2)
+         first
+         )))
 
