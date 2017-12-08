@@ -71,6 +71,11 @@
     (dev/pp in)
     (tsort in)))
 
+;;
+;; The structure is an inverted pyramid. This fn will give the weight of the
+;; program and all programs on top of it. Could (theoretically) benefit from
+;; memoization, as I'm manually doing 2nd top, then 3rd top etc...
+;;
 (defn program-weight-hof [m]
   (fn inner [program-name]
     (let [[weight disk-program-names] (get m program-name)]
@@ -88,13 +93,10 @@
 
 (defn ameliorate-group-hof [find-weight]
   (fn [group]
-    (let [group (assoc group :item-weights (->> (:items group)
+    (let [group (assoc group :item-weights (->> (:programs group)
                                                 (map (juxt identity #(find-weight %)))
                                                 (into {})))]
-      group
-      #_(when (not (apply = weights))
-          (let [bad-weights weights]
-            (- (apply max bad-weights) (apply min bad-weights)))))))
+      group)))
 
 (defn unbalanced? [group]
   (let [weights (->> group :item-weights vals (map second))]
@@ -105,8 +107,16 @@
        (map (fn [[k [weight items]]]
               {:head   k
                :weight weight
-               :items  items}))))
+               :programs  items}))))
 
+;;
+;; ans:
+;; ({:head "lahahn",
+;;   :weight 2750,
+;;   :programs #{"fzvctf" "utnrb" "bbytzn"},
+;;   :item-weights {"fzvctf" [85 1951], "utnrb" [538 1960], "bbytzn" [1597 1951]}})
+;; So "utnrb" is too heavy by 9, which gives answer of 529
+;;
 (defn x-2 []
   (let [parsed-in (->> (get-input)
                        (map parse))
@@ -121,8 +131,9 @@
         ;; us the top level but one groups (in the first instance).
         groups (->> (form-groups parsed-in-m)
                     dev/probe-off
-                    (filter #(empty? (set/difference (:items %) candidates)))
-                    (filter #(-> % :items seq)))
+                    ;; No spillover: all programs can be found in candidates
+                    (filter #(empty? (set/difference (:programs %) candidates)))
+                    (filter #(-> % :programs seq)))
         collect-info (ameliorate-group-hof (program-weight-hof parsed-in-m))
         results (->> groups
                      (map collect-info)
