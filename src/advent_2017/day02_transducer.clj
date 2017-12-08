@@ -25,12 +25,12 @@
                                  (filter int?)))
 
 (defn row->evenly-divided-2 [xs]
-  (->> xs
-       (into [] xform-row->evenly-divided)
+  (->> (u/combinations xs 2)
+       (sequence xform-row->evenly-divided)
        first))
 
 (defn row->evenly-divided-1 [xs]
-  (->> xs
+  (->> (u/combinations xs 2)
        (map (fn [xy]
                (let [res (apply / (sort-by - xy))]
                  res)))
@@ -41,6 +41,5 @@
 (defn x-2 []
   (let [input (get-input)]
     (->> input
-         (map #(u/combinations % 2))
-         (map row->evenly-divided-1)
+         (map row->evenly-divided-2)
          (reduce +))))

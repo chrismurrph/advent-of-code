@@ -31,11 +31,8 @@
    "dec" -})
 
 (defn operation [op amount]
-  (fn [old-register-value]
-    (let [old-register-value (or old-register-value 0)]
-      ((op-name->fn op) old-register-value amount))))
-
-(def maximum (fnil max Integer/MIN_VALUE))
+  (fn [register-value]
+    ((op-name->fn op) register-value amount)))
 
 (def comp->fn
   {">"  >
@@ -51,26 +48,28 @@
 (defn process-instruction [[memory
                             [{:keys [register op amount if-register comp num]} & rest-instructions]
                             kept-highest]]
-  (let [update-register-f (operation op amount)
-        new-memory (cond-> memory
+  (let [new-memory (cond-> memory
 
                            ((comp->fn comp) (or (get memory if-register) 0) num)
-                           (update register update-register-f))
-        new-highest (apply maximum (vals new-memory))
-        new-kept-highest (maximum kept-highest new-highest)
+                           (update register (fnil (operation op amount) 0)))
+        new-highest (apply max (vals new-memory))
+        new-kept-highest (max kept-highest new-highest)
         ]
     [new-memory rest-instructions new-kept-highest]))
 
 (defn ending-state? [[_ instructions _]]
   (empty? instructions))
 
+(def x-create-instruction
+  (comp
+    (map parse)
+    (map next)
+    (map make-instruction)))
+
 (defn iterations [input]
   (let [in (->> input
-                (map parse)
-                (map next)
-                (map make-instruction)
-                )]
-    (->> (iterate process-instruction [{} in])
+                (sequence x-create-instruction))]
+    (->> (iterate process-instruction [{} in Long/MIN_VALUE])
          (drop-while (complement ending-state?)))))
 
 ;; ans: 5946
