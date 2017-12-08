@@ -1,6 +1,7 @@
 (ns advent-2017.day08
   (:require [clojure.java.io :as io]
-            [clojure.string :as s]))
+            [clojure.string :as s]
+            [utils :as u]))
 
 (defn get-example-input []
   (->> (io/resource "2017/day08_example")
@@ -11,6 +12,8 @@
   (->> (io/resource "2017/day08")
        slurp
        s/split-lines))
+
+(def maximum u/maximum)
 
 ;; b inc 5 if a > 1
 (def instruction-regex #"(\S+) (\S+) (-?\d+) if (\S+) (\S+) (-?\d+)")
@@ -52,8 +55,8 @@
 
                            ((comp->fn comp) (or (get memory if-register) 0) num)
                            (update register (fnil (operation op amount) 0)))
-        new-highest (apply max (vals new-memory))
-        new-kept-highest (max kept-highest new-highest)
+        new-highest (apply maximum (vals new-memory))
+        new-kept-highest (maximum kept-highest new-highest)
         ]
     [new-memory rest-instructions new-kept-highest]))
 
@@ -69,7 +72,7 @@
 (defn iterations [input]
   (let [in (->> input
                 (sequence x-create-instruction))]
-    (->> (iterate process-instruction [{} in Long/MIN_VALUE])
+    (->> (iterate process-instruction [{} in])
          (drop-while (complement ending-state?)))))
 
 ;; ans: 5946
@@ -77,7 +80,7 @@
   (->> (iterations (get-input))
        ffirst
        vals
-       (apply max)))
+       (apply maximum)))
 
 ;; ans: 6026
 (defn x-2 []

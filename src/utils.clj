@@ -523,6 +523,17 @@
         (let [now-tested (into already-tested newly-generated)]
           (recur now-tested (into #{} (remove already-tested newly-generated)) (+ total-visited (count last-round)) (inc times)))))))
 
+;;
+;; If you have nils around, or zero length argument list, then
+;; max can be a pain. We may want to keep some 'running max' value
+;; at nil if have nothing to process.
+;; Here two nasty exceptions that `max` normally emits are avoided
+;; altogether: arity and NPE
+;;
+(defn maximum [& args]
+  (when-let [args (not-empty (filter some? args))]
+    (apply max args)))
+
 ;; TESTS
 
 (deftest test-remove-indexes
