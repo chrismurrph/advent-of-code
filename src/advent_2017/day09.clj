@@ -2,32 +2,7 @@
   (:require [clojure.test :refer :all]
             [clojure.java.io :as io]))
 
-(def test-input-scores-1
-  [["{}" 1]
-   ["{{{}}}" 6]
-   ["{{},{}}" 5]
-   ["{{{}}!}}},{}},{{}}}}" 16]
-   ["{{<{}!}>}!}}},{}},{{}}}}" 9]
-   ["{{{},{<>},{{}}}}" 16]
-   ["{{{},<{}>,{{}}}}" 13]
-   ["{{{}<,{},>{{}}}}" 13]
-   ["{<{},{},{{}}>}" 1]
-   ["{<a>,<a>,<a>,<a>}" 1]
-   ["{{<a>},{<a>},{<a>},{<a>}}" 9]
-   ["{{<!>},{<!>},{<!>},{<a>}}" 3]
-   ["{{<!!>}}" 3]
-   ["{<!!!>}>}" 1]
-   ["{{<!!!>}>}}" 3]
-   ["{{<!!>}>}}" 3]
-   ["{{<!>!},{<!>},{<!>},{<a>}}" 3]
-
-   ["{{<<!>!},{<!>},{<!>!},{<a>>}}" 3]
-
-   ;["{<\",{i>}" 1]
-   ;["{{{{<!>{!!\"u!>},<a}o!!<!>,<a!!\"e>}}},{}},{<\",{i>}" 1]
-   ])
-
-(def test-input-scores-2
+(def test-input-scores
   [
    ["{}" 1]
    ["{{{}}}" 6]
@@ -38,8 +13,6 @@
    ["{{<!!>},{<!!>},{<!!>},{<!!>}}" 9]
    ["{{<a!>},{<a!>},{<a!>},{<ab>}}" 3]
    ])
-
-(def test-input-scores test-input-scores-2)
 
 (defn get-input []
   (->> (io/resource "2017/day09")
@@ -56,38 +29,45 @@
                               start-group? inc
                               (and (pos? depth) end-group?) dec)]
         (assert (>= new-depth 0) [acc tok])
-        {:depth new-depth
-         :score (+ score points)
-         :idx (inc idx)}))
-    {:depth 0
-     :score 0
-     :idx   0}
+        {:idx           (inc idx)
+         :depth         new-depth
+         :score         (+ score points)
+         }))
+    {:idx   0
+     :depth 0
+     :score 0}
     toks))
 
-(defn consume [[[head & tail] output within-garbage? prior-contig-bangs-count]]
+(defn consume [[[head & tail] output within-garbage? prior-contig-bangs-count garbage-count]]
   (let [cancel-this-by-last-bang? (odd? prior-contig-bangs-count)
         start-of-garbage? (and (not cancel-this-by-last-bang?) (not within-garbage?) (= \< head))
         new-within-garbage? (or start-of-garbage?
                                 (and within-garbage?
                                      (or cancel-this-by-last-bang? (not= \> head))))
-        contig-bangs-count (if (= \! head)
+        bang? (= \! head)
+        contig-bangs-count (if bang?
                              (inc prior-contig-bangs-count)
                              0)
-        tok {:ch             head
-             :start-garbage? start-of-garbage?
-             :end-garbage?   (and (= head \>) within-garbage? (not cancel-this-by-last-bang?))
-             :start-group?   (and (= \{ head) (not new-within-garbage?))
-             :end-group?     (and (= \} head) (and (not cancel-this-by-last-bang?)
-                                                   (not new-within-garbage?)))
+        proper-ch-in-garbage? (and within-garbage?
+                                   (not= \> head)
+                                   (not bang?)
+                                   (not (odd? prior-contig-bangs-count)))
+        new-garbage-count (cond-> garbage-count
+                                  proper-ch-in-garbage? inc)
+        tok {:ch            head
+             :start-group?  (and (= \{ head) (not new-within-garbage?))
+             :end-group?    (and (= \} head) (and (not cancel-this-by-last-bang?)
+                                                  (not new-within-garbage?)))
+             :garbage-count new-garbage-count
              }
         new-output (conj output tok)]
-    [tail new-output new-within-garbage? contig-bangs-count]))
+    [tail new-output new-within-garbage? contig-bangs-count new-garbage-count]))
 
 (defn ending-state? [[input _ _ _]]
   (empty? input))
 
 (defn input->toks [in]
-  (->> (iterate consume [(seq in) [] false 0])
+  (->> (iterate consume [(seq in) [] false 0 0])
        (drop-while (complement ending-state?))
        ;;Make sure either do a take or a first
        ;(take 4)
@@ -107,23 +87,38 @@
     (is (= (map second inputs)
            (map (comp :score score-input first) inputs)))))
 
+(def test-garbage-count
+  [
+   ["<>" 0]
+   ["<random characters>" 17]
+   ["<<<<>" 3]
+   ["<{!>}>" 2]
+   ["<!!>" 0]
+   ["<!!!>>" 0]
+   ["<{o\"i!a,<{i<a>" 10]
+   ])
+
+(deftest test-test-garbage
+  (let [inputs test-garbage-count
+        results (->> inputs
+                     ;(drop 6)
+                     ;(take 1)
+                     (map first)
+                     (map input->toks)
+                     (map last)
+                     (map :garbage-count))]
+    (is (= (map second inputs)
+           results))))
+
+;; ans: 10616
 (defn x-1 []
   (->> (get-input)
        dev/probe-count-off
        score-input))
 
+;; ans: 501
 (defn x-2 []
-  (->> test-input-scores
-      (drop 4)
-      (take 1)
-      ffirst
-      input->toks
-      dev/probe-on
-      reduce-score))
-
-(defn x-3 []
-  (-> (nth test-input-scores 6)
-      first
-      input->toks
-      dev/probe-on
-      reduce-score))
+  (->> (get-input)
+       input->toks
+       last
+       :garbage-count))
