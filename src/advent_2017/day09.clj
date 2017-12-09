@@ -20,44 +20,38 @@
 
 (defn reduce-score [toks]
   (reduce
-    (fn [{:keys [depth score idx] :as acc} {:keys [start-group? end-group?] :as tok}]
-      (assert (number? depth))
-      (assert (number? score))
-      (assert (not (and start-group? end-group?)))
+    (fn [{:keys [depth score] :as acc} {:keys [start-group? end-group?] :as tok}]
       (let [points (if start-group? (inc depth) 0)
             new-depth (cond-> depth
                               start-group? inc
-                              (and (pos? depth) end-group?) dec)]
+                              end-group? dec)]
         (assert (>= new-depth 0) [acc tok])
-        {:idx           (inc idx)
-         :depth         new-depth
-         :score         (+ score points)
-         }))
-    {:idx   0
-     :depth 0
-     :score 0}
+        {:depth new-depth
+         :score (+ score points)}))
+    {:depth 0 :score 0}
     toks))
 
 (defn consume [[[head & tail] output within-garbage? prior-contig-bangs-count garbage-count]]
   (let [cancel-this-by-last-bang? (odd? prior-contig-bangs-count)
-        start-of-garbage? (and (not cancel-this-by-last-bang?) (not within-garbage?) (= \< head))
-        new-within-garbage? (or start-of-garbage?
+        new-within-garbage? (or (and
+                                  (not cancel-this-by-last-bang?)
+                                  (not within-garbage?)
+                                  (= \< head))
                                 (and within-garbage?
                                      (or cancel-this-by-last-bang? (not= \> head))))
         bang? (= \! head)
         contig-bangs-count (if bang?
                              (inc prior-contig-bangs-count)
                              0)
-        proper-ch-in-garbage? (and within-garbage?
-                                   (not= \> head)
-                                   (not bang?)
-                                   (not (odd? prior-contig-bangs-count)))
         new-garbage-count (cond-> garbage-count
-                                  proper-ch-in-garbage? inc)
-        tok {:ch            head
-             :start-group?  (and (= \{ head) (not new-within-garbage?))
-             :end-group?    (and (= \} head) (and (not cancel-this-by-last-bang?)
-                                                  (not new-within-garbage?)))}
+                                  (and within-garbage?
+                                       (not= \> head)
+                                       (not bang?)
+                                       (not (odd? prior-contig-bangs-count))) inc)
+        tok {:ch           head
+             :start-group? (and (= \{ head) (not new-within-garbage?))
+             :end-group?   (and (= \} head) (and (not cancel-this-by-last-bang?)
+                                                 (not new-within-garbage?)))}
         new-output (conj output tok)]
     [tail new-output new-within-garbage? contig-bangs-count new-garbage-count]))
 
@@ -97,8 +91,6 @@
 (deftest test-test-garbage
   (let [inputs test-garbage-count
         results (->> inputs
-                     ;(drop 6)
-                     ;(take 1)
                      (map first)
                      (map input->final-state)
                      (map last))]
