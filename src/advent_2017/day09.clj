@@ -57,29 +57,25 @@
         tok {:ch            head
              :start-group?  (and (= \{ head) (not new-within-garbage?))
              :end-group?    (and (= \} head) (and (not cancel-this-by-last-bang?)
-                                                  (not new-within-garbage?)))
-             :garbage-count new-garbage-count
-             }
+                                                  (not new-within-garbage?)))}
         new-output (conj output tok)]
     [tail new-output new-within-garbage? contig-bangs-count new-garbage-count]))
 
 (defn ending-state? [[input _ _ _]]
   (empty? input))
 
-(defn input->toks [in]
+(defn input->final-state [in]
   (->> (iterate consume [(seq in) [] false 0 0])
        (drop-while (complement ending-state?))
        ;;Make sure either do a take or a first
        ;(take 4)
        first
-       second
-       ;dev/pp
-       ;score
        ))
 
 (defn score-input [in]
   (-> in
-      input->toks
+      input->final-state
+      second
       reduce-score))
 
 (deftest test-test-scores
@@ -104,9 +100,8 @@
                      ;(drop 6)
                      ;(take 1)
                      (map first)
-                     (map input->toks)
-                     (map last)
-                     (map :garbage-count))]
+                     (map input->final-state)
+                     (map last))]
     (is (= (map second inputs)
            results))))
 
@@ -114,11 +109,11 @@
 (defn x-1 []
   (->> (get-input)
        dev/probe-count-off
-       score-input))
+       score-input
+       :score))
 
-;; ans: 501
+;; ans: 5101
 (defn x-2 []
   (->> (get-input)
-       input->toks
-       last
-       :garbage-count))
+       input->final-state
+       last))
