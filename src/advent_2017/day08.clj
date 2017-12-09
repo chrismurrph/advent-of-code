@@ -13,6 +13,10 @@
        slurp
        s/split-lines))
 
+;;
+;; If you switch this to max then you will have to provide a starting/default
+;; value for `kept-highest`.
+;;
 (def maximum u/maximum)
 
 ;; b inc 5 if a > 1
@@ -27,7 +31,7 @@
           num (assoc :num (Integer/parseInt num))))
 
 (defn parse [line]
-  (->> (re-find instruction-regex line)))
+  (->> (re-matches instruction-regex line)))
 
 (def op-name->fn
   {"inc" +
@@ -52,13 +56,10 @@
                             [{:keys [register op amount if-register comp num]} & rest-instructions]
                             kept-highest]]
   (let [new-memory (cond-> memory
-
                            ((comp->fn comp) (or (get memory if-register) 0) num)
-                           (update register (fnil (operation op amount) 0)))
-        new-highest (apply maximum (vals new-memory))
-        new-kept-highest (maximum kept-highest new-highest)
-        ]
-    [new-memory rest-instructions new-kept-highest]))
+                           (update register (fnil (operation op amount) 0)))]
+    [new-memory rest-instructions (maximum kept-highest
+                                           (apply maximum (vals new-memory)))]))
 
 (defn ending-state? [[_ instructions _]]
   (empty? instructions))
@@ -70,10 +71,8 @@
     (map make-instruction)))
 
 (defn iterations [input]
-  (let [in (->> input
-                (sequence x-create-instruction))]
-    (->> (iterate process-instruction [{} in])
-         (drop-while (complement ending-state?)))))
+  (->> (iterate process-instruction [{} (sequence x-create-instruction input)])
+       (drop-while (complement ending-state?))))
 
 ;; ans: 5946
 (defn x-1 []
